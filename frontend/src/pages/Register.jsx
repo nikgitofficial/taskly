@@ -1,6 +1,7 @@
+// src/pages/Register.jsx
 import { useState } from "react";
 import axios from "../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Button,
@@ -11,26 +12,30 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Container,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 const Register = () => {
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // true if screen <600px
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("user");
-
-  // Extra fields for student role
   const [name, setName] = useState("");
   const [course, setCourse] = useState("");
   const [yearLevel, setYearLevel] = useState("");
-
-  const navigate = useNavigate();
+  const [error, setError] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError("");
 
     const payload = { email, password, role };
 
-    // Attach student-specific data if role is student
     if (role === "student") {
       payload.name = name;
       payload.course = course;
@@ -41,41 +46,65 @@ const Register = () => {
       await axios.post("/auth/register", payload);
       navigate("/login");
     } catch {
-      alert("Registration failed");
+      setError("Registration failed. Please try again.");
     }
   };
 
   return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      minHeight="100vh"
-      bgcolor="#f5f5f5"
+    <Container
+      maxWidth="sm"
+      sx={{
+        mt: { xs: 4, md: 10 },
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "80vh",
+      }}
     >
-      <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 400 }}>
-        <Typography variant="h5" align="center" gutterBottom>
+      <Paper
+        elevation={4}
+        sx={{
+          p: isMobile ? 2 : 4,
+          borderRadius: 3,
+          width: "100%",
+          maxWidth: 480,
+        }}
+      >
+        <Typography
+          variant={isMobile ? "h5" : "h4"}
+          align="center"
+          gutterBottom
+        >
           Register
         </Typography>
+
+        {/* Only show intro on non-mobile */}
+        {!isMobile && (
+          <Typography variant="body2" align="center" color="text.secondary" mb={2}>
+            Create an account to access Taskly’s dashboard based on your role.
+          </Typography>
+        )}
+
         <form onSubmit={handleRegister}>
           <TextField
             fullWidth
             label="Email"
-            variant="outlined"
+            type="email"
             margin="normal"
+            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required 
+            autoComplete="email"
           />
           <TextField
             fullWidth
-            type="password"
             label="Password"
-            variant="outlined"
+            type="password"
             margin="normal"
+            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required 
+            autoComplete="new-password"
           />
 
           <FormControl fullWidth margin="normal">
@@ -92,51 +121,60 @@ const Register = () => {
             </Select>
           </FormControl>
 
-          {/* 👇 Show these only for students */}
           {role === "student" && (
             <>
               <TextField
                 fullWidth
                 label="Full Name"
-                variant="outlined"
                 margin="normal"
+                required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required 
               />
               <TextField
                 fullWidth
                 label="Course"
-                variant="outlined"
                 margin="normal"
+                required
                 value={course}
                 onChange={(e) => setCourse(e.target.value)}
-                required 
               />
               <TextField
                 fullWidth
                 label="Year Level"
-                variant="outlined"
                 margin="normal"
+                required
                 value={yearLevel}
                 onChange={(e) => setYearLevel(e.target.value)}
-                required 
               />
             </>
           )}
 
+          {error && (
+            <Typography color="error" variant="body2" align="center" mt={1}>
+              {error}
+            </Typography>
+          )}
+
           <Button
             type="submit"
-            variant="contained"
-            color="primary"
             fullWidth
-            sx={{ mt: 2 }}
+            variant="contained"
+            size="large"
+            sx={{ mt: 3, py: 1.5 }}
           >
             Register
           </Button>
         </form>
+
+        <Typography align="center" sx={{ mt: 2 }}>
+          Already have an account?{" "}
+          <Link to="/login" style={{ color: "#1976d2", textDecoration: "none" }}>
+            Login
+          </Link>
+        </Typography>
       </Paper>
-    </Box>
+    </Container>
   );
 };
 

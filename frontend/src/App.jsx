@@ -12,9 +12,9 @@ import NotAuthorized from "./pages/NotAuthorized";
 import PrivateRoute from "./components/PrivateRoute";
 import StudentRoute from "./components/routes/StudentRoute";
 
-import StudentHome from "./pages/StudentHome";
-import StudentDashboard from "./pages/StudentDashboard";
-import StudentProfile from "./pages/StudentProfile";
+import StudentHome from "./pages/students/StudentHome";
+import StudentDashboard from "./pages/students/StudentDashboard";
+import StudentProfile from "./pages/students/StudentProfile";
 
 const App = () => {
   return (

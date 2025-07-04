@@ -1,7 +1,7 @@
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import axios from "../api/axios";
+import axios from "../../api/axios";
 import {
   Container,
   Typography,
@@ -11,7 +11,9 @@ import {
   Avatar,
   Box,
   Fade,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import TaskIcon from "@mui/icons-material/Task";
 import EventIcon from "@mui/icons-material/Event";
@@ -35,6 +37,8 @@ const bgMap = {
 const StudentDashboard = () => {
   const { student, user } = useAuth();
   const [entries, setEntries] = useState([]);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     if (Notification.permission !== "granted") {
@@ -48,7 +52,6 @@ const StudentDashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // ✅ Only keep entries that are NOT done
         const filtered = res.data.filter((entry) => !entry.done);
         setEntries(filtered);
 
@@ -80,7 +83,6 @@ const StudentDashboard = () => {
   }, []);
 
   const categories = ["Assignment", "Task", "Event", "Todo"];
-
   const counts = categories.reduce(
     (acc, cat) => ({
       ...acc,
@@ -102,15 +104,15 @@ const StudentDashboard = () => {
   const dueTitles = upcomingEntries.slice(0, 3).map((e) => e.title);
 
   return (
-    <Container sx={{ mt: 5, mb: 8 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
       <Fade in>
         <Box>
           <Typography
-            variant="h4"
+            variant={isMobile ? "h5" : "h4"}
             align="center"
             gutterBottom
             fontWeight="bold"
-            color="primary.main"
+            color="primary"
           >
             🎓 Welcome Back, {student?.name || "Student"}
           </Typography>
@@ -119,7 +121,7 @@ const StudentDashboard = () => {
           <Card
             sx={{
               mb: 4,
-              p: 3,
+              p: { xs: 2, sm: 3 },
               borderRadius: 4,
               boxShadow: 6,
               backgroundColor: "#f9f9f9",
@@ -132,19 +134,22 @@ const StudentDashboard = () => {
                   alt={student?.name}
                   sx={{
                     bgcolor: "primary.main",
-                    width: 56,
-                    height: 56,
-                    fontSize: 24,
+                    width: { xs: 56, sm: 64 },
+                    height: { xs: 56, sm: 64 },
+                    fontSize: { xs: 22, sm: 26 },
                     color: "#fff",
                   }}
                 >
                   {!student?.profilePic &&
-                    (student?.name?.[0] || user?.email?.[0])}
+                    (student?.name?.[0]?.toUpperCase() ||
+                      user?.email?.[0]?.toUpperCase())}
                 </Avatar>
               </Grid>
               <Grid item xs>
                 <Typography variant="h6">{student?.name}</Typography>
-                <Typography color="text.secondary">{user?.email}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {user?.email}
+                </Typography>
                 <Typography variant="body2">
                   {student?.course} • Year {student?.yearLevel}
                 </Typography>
@@ -179,7 +184,7 @@ const StudentDashboard = () => {
               </Grid>
             ))}
 
-            {/* Total Due */}
+            {/* Total Due Card */}
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
@@ -211,7 +216,7 @@ const StudentDashboard = () => {
               </Card>
             </Grid>
 
-            {/* Next Due */}
+            {/* Next Due Card */}
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
@@ -242,7 +247,7 @@ const StudentDashboard = () => {
             </Grid>
           </Grid>
 
-          {/* Manage Entries Button */}
+          {/* Manage Entries CTA */}
           <Box textAlign="center" mt={5}>
             <Button
               component={RouterLink}
@@ -252,9 +257,9 @@ const StudentDashboard = () => {
               sx={{
                 px: 5,
                 py: 1.5,
-                borderRadius: 8,
+                borderRadius: 6,
                 fontWeight: "bold",
-                boxShadow: 3,
+                boxShadow: 4,
               }}
             >
               ➕ Manage Entries
