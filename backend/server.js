@@ -17,18 +17,19 @@ const app = express();
 
 // ✅ Allow both local dev and production frontend URLs
 const allowedOrigins = [
-  "http://localhost:5173",         // Vite dev server
-  process.env.CLIENT_URL           // Your Vercel production URL
+  "http://localhost:5173",                   // Local dev
+  process.env.CLIENT_URL?.replace(/\/$/, "") // Vercel (no trailing slash)
 ];
 
 // CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like Postman) or from allowed origins
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+        console.log("✅ CORS allowed:", origin);
         callback(null, true);
       } else {
+        console.warn("❌ CORS blocked:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -46,12 +47,18 @@ app.use("/api/auth", authRoutes);
 app.use("/api/student-entries", studentEntryRoutes);
 app.use("/api/students", studentRoutes);
 
+// Optional: Simple health check route
+app.get("/", (req, res) => {
+  res.send("🚀 Taskly backend is running!");
+});
+
 // DB connection and server start
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    app.listen(process.env.PORT, () =>
-      console.log(`✅ Server running on port ${process.env.PORT}`)
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () =>
+      console.log(`✅ Server running on port ${PORT}`)
     );
   })
   .catch((err) => console.error("❌ MongoDB connection error:", err));
