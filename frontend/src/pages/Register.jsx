@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import { useState } from "react";
 import axios from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
@@ -15,12 +14,13 @@ import {
   Container,
   useMediaQuery,
   useTheme,
+  Alert,
 } from "@mui/material";
 
 const Register = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // true if screen <600px
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,10 +29,12 @@ const Register = () => {
   const [course, setCourse] = useState("");
   const [yearLevel, setYearLevel] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     const payload = { email, password, role };
 
@@ -43,10 +45,17 @@ const Register = () => {
     }
 
     try {
-      await axios.post("/auth/register", payload);
-      navigate("/login");
-    } catch {
-      setError("Registration failed. Please try again.");
+      const res = await axios.post("/auth/register", payload);
+      console.log("✅ Registration successful:", res.data);
+      setSuccess("Registration successful! Redirecting to login...");
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err) {
+      console.error("❌ Registration failed:", err);
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Registration failed. Please try again.";
+      setError(msg);
     }
   };
 
@@ -70,15 +79,10 @@ const Register = () => {
           maxWidth: 480,
         }}
       >
-        <Typography
-          variant={isMobile ? "h5" : "h4"}
-          align="center"
-          gutterBottom
-        >
+        <Typography variant={isMobile ? "h5" : "h4"} align="center" gutterBottom>
           Register
         </Typography>
 
-        {/* Only show intro on non-mobile */}
         {!isMobile && (
           <Typography variant="body2" align="center" color="text.secondary" mb={2}>
             Create an account to access Taskly’s dashboard based on your role.
@@ -151,9 +155,15 @@ const Register = () => {
           )}
 
           {error && (
-            <Typography color="error" variant="body2" align="center" mt={1}>
+            <Alert severity="error" sx={{ mt: 2 }}>
               {error}
-            </Typography>
+            </Alert>
+          )}
+
+          {success && (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              {success}
+            </Alert>
           )}
 
           <Button
