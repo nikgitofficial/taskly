@@ -12,27 +12,24 @@ import studentRoutes from "./routes/studentRoutes.js";
 // Load environment variables
 dotenv.config();
 
+// Create Express app
 const app = express();
 
-// Log loaded CLIENT_URL
-console.log("✅ Loaded CLIENT_URL:", process.env.CLIENT_URL);
-
+// ✅ Allow both local dev and production frontend URLs
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://taskly-plum.vercel.app"
+  "http://localhost:5173",                   // Local dev
+  process.env.CLIENT_URL?.replace(/\/$/, "") // Vercel (no trailing slash)
 ];
-
+  
+// CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      const cleanOrigin = origin?.replace(/\/$/, "");
-      console.log("🌐 CORS check:", cleanOrigin);
-
-      if (!origin || allowedOrigins.includes(cleanOrigin)) {
-        console.log("✅ CORS allowed:", cleanOrigin);
+      if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+        console.log("✅ CORS allowed:", origin);
         callback(null, true);
       } else {
-        console.warn("❌ CORS blocked:", cleanOrigin);
+        console.warn("❌ CORS blocked:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -45,17 +42,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Routes
+// Route handlers
 app.use("/api/auth", authRoutes);
 app.use("/api/student-entries", studentEntryRoutes);
 app.use("/api/students", studentRoutes);
 
-// Health check
+// Optional: Simple health check route
 app.get("/", (req, res) => {
   res.send("🚀 Taskly backend is running!");
 });
 
-// Connect DB and start server
+// DB connection and server start
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
