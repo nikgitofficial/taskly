@@ -12,24 +12,27 @@ import studentRoutes from "./routes/studentRoutes.js";
 // Load environment variables
 dotenv.config();
 
-// Create Express app
 const app = express();
 
-// ✅ Allow both local dev and production frontend URLs
+// Log loaded CLIENT_URL
+console.log("✅ Loaded CLIENT_URL:", process.env.CLIENT_URL);
+
 const allowedOrigins = [
-  "http://localhost:5173",                   // Local dev
-  process.env.CLIENT_URL?.replace(/\/$/, "") // Vercel (no trailing slash)
+  "http://localhost:5173",
+  process.env.CLIENT_URL?.replace(/\/$/, "")
 ];
-  
-// CORS configuration
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
-        console.log("✅ CORS allowed:", origin);
+      const cleanOrigin = origin?.replace(/\/$/, "");
+      console.log("🌐 CORS check:", cleanOrigin);
+
+      if (!origin || allowedOrigins.includes(cleanOrigin)) {
+        console.log("✅ CORS allowed:", cleanOrigin);
         callback(null, true);
       } else {
-        console.warn("❌ CORS blocked:", origin);
+        console.warn("❌ CORS blocked:", cleanOrigin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -42,17 +45,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Route handlers
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/student-entries", studentEntryRoutes);
 app.use("/api/students", studentRoutes);
 
-// Optional: Simple health check route
+// Health check
 app.get("/", (req, res) => {
   res.send("🚀 Taskly backend is running!");
 });
 
-// DB connection and server start
+// Connect DB and start server
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
