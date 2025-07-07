@@ -6,11 +6,8 @@ import {
   Box,
   Stack,
   IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
+  Menu,
+  MenuItem,
   useMediaQuery,
   Avatar,
   CircularProgress,
@@ -29,16 +26,21 @@ const Navbar = () => {
   const isStudent = user?.role === "student";
   const isMobile = useMediaQuery("(max-width:768px)");
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
+  const open = Boolean(anchorEl);
+  const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
   const handleLogout = () => {
+    handleMenuClose();
     setLogoutLoading(true);
     setTimeout(() => {
-      logout(); // clear token & user
+      logout();
       setLogoutLoading(false);
-      setSnackbarOpen(true); // ✅ Show snackbar after logout
+      setSnackbarOpen(true);
       navigate("/login");
     }, 1000);
   };
@@ -96,14 +98,7 @@ const Navbar = () => {
 
   return (
     <>
-      <AppBar
-        position="fixed"
-        sx={{
-          backgroundColor: "#1e1e1e",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-          px: 3,
-        }}
-      >
+      <AppBar position="fixed" sx={{ backgroundColor: "#1e1e1e", px: 3 }}>
         <Toolbar sx={{ justifyContent: "space-between" }}>
           {/* Logo */}
           <Box
@@ -158,57 +153,80 @@ const Navbar = () => {
               )}
             </Stack>
           ) : (
-            <IconButton color="inherit" onClick={() => setDrawerOpen(true)}>
-              <MenuIcon />
-            </IconButton>
+            <>
+              <IconButton color="inherit" onClick={handleMenuClick}>
+                <MenuIcon />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleMenuClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                PaperProps={{
+                  sx: {
+                    backgroundColor: "#1e1e1e",
+                    color: "white",
+                    minWidth: 180,
+                  },
+                }}
+              >
+                {user ? (
+                  <>
+                    {navItems.map((item) => (
+                      <MenuItem
+                        key={item.to}
+                        component={NavLink}
+                        to={item.to}
+                        onClick={handleMenuClose}
+                        sx={{
+                          "&:hover": { backgroundColor: "#333", color: "#fff" },
+                          "&.active": { backgroundColor: "#444" },
+                        }}
+                      >
+                        {item.label}
+                      </MenuItem>
+                    ))}
+                    <MenuItem
+                      onClick={handleLogout}
+                      sx={{ "&:hover": { backgroundColor: "#333", color: "#fff" } }}
+                    >
+                      Logout
+                    </MenuItem>
+                  </>
+                ) : (
+                  <>
+                    <MenuItem
+                      component={NavLink}
+                      to="/login"
+                      onClick={handleMenuClose}
+                      sx={{
+                        "&:hover": { backgroundColor: "#333", color: "#fff" },
+                        "&.active": { backgroundColor: "#444" },
+                      }}
+                    >
+                      Login
+                    </MenuItem>
+                    <MenuItem
+                      component={NavLink}
+                      to="/register"
+                      onClick={handleMenuClose}
+                      sx={{
+                        "&:hover": { backgroundColor: "#333", color: "#fff" },
+                        "&.active": { backgroundColor: "#444" },
+                      }}
+                    >
+                      Register
+                    </MenuItem>
+                  </>
+                )}
+              </Menu>
+            </>
           )}
         </Toolbar>
       </AppBar>
 
-      {/* Drawer for mobile */}
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      >
-        <List sx={{ width: 220 }}>
-          {user ? (
-            <>
-              {navItems.map((item) => (
-                <ListItem key={item.to} disablePadding>
-                  <ListItemButton
-                    component={NavLink}
-                    to={item.to}
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    <ListItemText primary={item.label} />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-              <ListItem disablePadding>
-                <ListItemButton onClick={handleLogout}>
-                  <ListItemText primary="Logout" />
-                </ListItemButton>
-              </ListItem>
-            </>
-          ) : (
-            <>
-              <ListItem disablePadding>
-                <ListItemButton component={NavLink} to="/login">
-                  <ListItemText primary="Login" />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton component={NavLink} to="/register">
-                  <ListItemText primary="Register" />
-                </ListItemButton>
-              </ListItem>
-            </>
-          )}
-        </List>
-      </Drawer>
-
-      {/* Snackbar for logout */}
+      {/* Snackbar */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
@@ -220,7 +238,7 @@ const Navbar = () => {
   );
 };
 
-// NavButton component
+// ✅ Desktop Nav Button
 const NavButton = ({ to, label }) => (
   <Button
     component={NavLink}

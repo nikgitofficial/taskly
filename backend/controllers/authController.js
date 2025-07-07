@@ -4,7 +4,7 @@ import User from "../models/User.js";
 import Student from "../models/Student.js";
 
 const generateAccessToken = (user) =>
-  jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "15m" });
+  jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "50 m" });
 
 const generateRefreshToken = (user) =>
   jwt.sign(user, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
@@ -71,7 +71,7 @@ export const login = async (req, res) => {
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "Strict",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });

@@ -1,4 +1,3 @@
-// src/pages/students/StudentHome.jsx
 import React, { useEffect, useState, useRef } from "react";
 import axios from "../../api/axios";
 import {
@@ -24,17 +23,19 @@ import {
   useTheme,
   CircularProgress,
   Snackbar,
+  InputAdornment,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import SearchIcon from "@mui/icons-material/Search";
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
-const categories = ["Assignment", "Task", "Event", "Todo"];
+const categories = ["All", "Assignment", "Task", "Event", "Todo"];
 
 const StudentHome = () => {
   const theme = useTheme();
@@ -49,6 +50,7 @@ const StudentHome = () => {
     file: null,
   });
   const [entries, setEntries] = useState([]);
+  const [filteredEntries, setFilteredEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -57,12 +59,22 @@ const StudentHome = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("All");
 
   const fileInputRef = useRef();
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [previewType, setPreviewType] = useState("");
 
   useEffect(() => {
     fetchEntries();
   }, []);
+
+  useEffect(() => {
+    filterData();
+  }, [entries, search, filterCategory]);
 
   const fetchEntries = async () => {
     try {
@@ -78,6 +90,37 @@ const StudentHome = () => {
     }
   };
 
+  const filterData = () => {
+    const lowerSearch = search.toLowerCase();
+    const filtered = entries.filter((entry) => {
+      const matchesSearch =
+        entry.title.toLowerCase().includes(lowerSearch) ||
+        entry.description.toLowerCase().includes(lowerSearch);
+      const matchesCategory =
+        filterCategory === "All" || entry.category === filterCategory;
+      return matchesSearch && matchesCategory;
+    });
+    setFilteredEntries(filtered);
+  };
+
+  const handlePreview = (url) => {
+    const ext = url.split(".").pop().toLowerCase();
+    if (["pdf", "jpg", "jpeg", "png", "gif"].includes(ext)) {
+      const type = ext === "pdf" ? "pdf" : "image";
+      const viewUrl =
+        type === "pdf"
+          ? `https://docs.google.com/gview?url=${encodeURIComponent(
+              url
+            )}&embedded=true`
+          : url;
+      setPreviewType(type);
+      setPreviewUrl(viewUrl);
+      setPreviewOpen(true);
+    } else {
+      alert("Unsupported file type.");
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "file") {
@@ -89,12 +132,21 @@ const StudentHome = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const { title, description, category, date, file } = form;
+
+    if (!title || !description || !category || !date) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
     setSubmitting(true);
     const token = localStorage.getItem("token");
     const formData = new FormData();
-    Object.entries(form).forEach(([key, val]) => {
-      if (val) formData.append(key, val);
-    });
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("category", category);
+    formData.append("date", date);
+    if (file) formData.append("file", file);
 
     try {
       if (editingId) {
@@ -115,10 +167,11 @@ const StudentHome = () => {
         setSnackMsg("Entry created successfully!");
       }
 
-      fetchEntries();
       handleClose();
+      await fetchEntries();
       setSnackOpen(true);
-    } catch {
+    } catch (error) {
+      console.error("❌ Error submitting form:", error?.response || error);
       alert("Failed to submit entry");
     } finally {
       setSubmitting(false);
@@ -131,23 +184,23 @@ const StudentHome = () => {
   };
 
   const handleConfirmDelete = async () => {
-  setDeleting(true);
-  try {
-    const token = localStorage.getItem("token");
-    await axios.delete(`/student-entries/${entryToDelete._id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setEntries((prev) => prev.filter((e) => e._id !== entryToDelete._id));
-    setSnackMsg("Entry deleted successfully!");
-    setSnackOpen(true);
-  } catch {
-    alert("Failed to delete entry");
-  } finally {
-    setDeleting(false);
-    setDeleteDialogOpen(false);
-    setEntryToDelete(null);
-  }
-};
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`/student-entries/${entryToDelete._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setEntries((prev) => prev.filter((e) => e._id !== entryToDelete._id));
+      setSnackMsg("Entry deleted successfully!");
+      setSnackOpen(true);
+    } catch {
+      alert("Failed to delete entry");
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setEntryToDelete(null);
+    }
+  };
 
   const handleToggleDone = async (entry) => {
     try {
@@ -157,7 +210,7 @@ const StudentHome = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEntries((prev) =>
-        prev.map((e) => (e._id === entry._id ? { ...e, done: !e.done } : e))
+        prev.map((e) => (e._id === entry._id ? updated : e))
       );
       setSnackMsg(`Marked as ${entry.done ? "Undone" : "Done"}`);
       setSnackOpen(true);
@@ -191,6 +244,48 @@ const StudentHome = () => {
         Student Home
       </Typography>
 
+      {/* Search and Filter */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <TextField
+          label="Search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          fullWidth
+          variant="outlined"
+          size="small"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ flex: 2 }}
+        />
+        <TextField
+          label="Category"
+          select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          variant="outlined"
+          size="small"
+          sx={{ flex: 1 }}
+        >
+          {categories.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Box>
+
       <Button
         variant="contained"
         onClick={() => setOpen(true)}
@@ -200,60 +295,70 @@ const StudentHome = () => {
         + Create New Entry
       </Button>
 
+      {/* Table */}
       <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
         <Table stickyHeader size="small">
-          <TableHead sx={{ backgroundColor: "#000" }}>
+          <TableHead>
             <TableRow>
-              {["Title", "Category", "Posted", "Due", "File", "Status", "Actions"].map(
-                (head) => (
-                  <TableCell
-                    key={head}
-                    sx={{ color: "#fff", fontWeight: "bold", backgroundColor: "#000" }}
-                  >
-                    {head}
-                  </TableCell>
-                )
-              )}
+              {[
+                "Title",
+                "Description",
+                "Category",
+                "Posted",
+                "Due",
+                "File",
+                "Status",
+                "Actions",
+              ].map((head) => (
+                <TableCell
+                  key={head}
+                  sx={{ color: "#fff", fontWeight: "bold", backgroundColor: "#000" }}
+                >
+                  {head}
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   <Typography variant="body2">Loading...</Typography>
                 </TableCell>
               </TableRow>
-            ) : entries.length === 0 ? (
+            ) : filteredEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   <Typography variant="body2">No entries found.</Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              entries.map((entry) => (
-                <TableRow
-                  key={entry._id}
-                  sx={{
-                    backgroundColor: entry.done ? "#f0fff4" : "inherit",
-                    "&:hover": { backgroundColor: "#f5f5f5" },
-                  }}
-                >
+              filteredEntries.map((entry) => (
+                <TableRow key={entry._id}>
                   <TableCell>{entry.title}</TableCell>
+                  <TableCell sx={{ whiteSpace: "pre-line" }}>{entry.description}</TableCell>
                   <TableCell>{entry.category}</TableCell>
                   <TableCell>{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
                   <TableCell>
                     {entry.fileUrl ? (
-                      <a
-                        href={entry.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: "#1976d2", textDecoration: "none" }}
-                      >
-                        📎 {entry.fileName || "View"}
-                      </a>
+                      <>
+                        <Button size="small" onClick={() => handlePreview(entry.fileUrl)}>
+                          👁️ Preview
+                        </Button>
+                        &nbsp;|&nbsp;
+                        <a
+                          href={entry.fileUrl.replace("/upload/", "/upload/fl_attachment/")}
+                          download
+                          style={{ textDecoration: "none" }}
+                        >
+                          📥 Download
+                        </a>
+                      </>
                     ) : (
-                      "—"
+                      <Typography variant="body2" color="textSecondary">
+                        No File
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell>
@@ -291,6 +396,67 @@ const StudentHome = () => {
         </Table>
       </TableContainer>
 
+      {/* File Preview Dialog */}
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>File Preview</DialogTitle>
+        <DialogContent dividers>
+          {previewType === "pdf" ? (
+            <iframe
+              src={previewUrl}
+              title="PDF Preview"
+              width="100%"
+              height="600px"
+              style={{ border: "none" }}
+            />
+          ) : (
+            <Box display="flex" justifyContent="center">
+              <img src={previewUrl} alt="Preview" style={{ maxWidth: "100%", maxHeight: 500 }} />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPreviewOpen(false)} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setSnackOpen(false)} severity="success">
+          {snackMsg}
+        </Alert>
+      </Snackbar>
+
+      {/* Delete Confirmation */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent dividers>
+          <Typography>
+            Are you sure you want to delete <strong>{entryToDelete?.title}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+            startIcon={deleting && <CircularProgress size={18} color="inherit" />}
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Entry Form Dialog */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>{editingId ? "Edit Entry" : "Create Entry"}</DialogTitle>
@@ -326,7 +492,7 @@ const StudentHome = () => {
               margin="dense"
               required
             >
-              {categories.map((option) => (
+              {categories.slice(1).map((option) => (
                 <MenuItem key={option} value={option}>
                   {option}
                 </MenuItem>
@@ -364,47 +530,6 @@ const StudentHome = () => {
           >
             {submitting ? "Submitting..." : editingId ? "Update" : "Submit"}
           </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={snackOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackOpen(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert onClose={() => setSnackOpen(false)} severity="success">
-          {snackMsg}
-        </Alert>
-      </Snackbar>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent dividers>
-          <Typography>
-            Are you sure you want to delete <strong>{entryToDelete?.title}</strong>?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">
-            Cancel
-          </Button>
-          <Button
-  onClick={handleConfirmDelete}
-  color="error"
-  variant="contained"
-  disabled={deleting}
-  startIcon={deleting && <CircularProgress size={18} color="inherit" />}
->
-  {deleting ? "Deleting..." : "Delete"}
-</Button>
         </DialogActions>
       </Dialog>
     </Box>

@@ -1,4 +1,3 @@
-// controllers/studentController.js
 import Student from "../models/Student.js";
 import StudentEntry from "../models/StudentEntry.js";
 import { v2 as cloudinary } from "cloudinary";
@@ -99,9 +98,18 @@ export const uploadProfilePic = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
+    // Upload to Cloudinary
+    const cloudRes = await cloudinary.uploader.upload(req.file.path, {
+      folder: "student-profile-pics",
+      resource_type: "image",
+    });
+
+    // Cleanup local temp file
+    fs.unlinkSync(req.file.path);
+
     const updated = await Student.findOneAndUpdate(
       { userId: req.user.id },
-      { profilePic: req.file.path }, // Already Cloudinary URL
+      { profilePic: cloudRes.secure_url },
       { new: true }
     );
 
@@ -109,7 +117,7 @@ export const uploadProfilePic = async (req, res) => {
       name: updated.name,
       course: updated.course,
       yearLevel: updated.yearLevel,
-      profilePic: updated.profilePic
+      profilePic: updated.profilePic,
     });
   } catch (err) {
     console.error("Upload failed:", err);
@@ -117,7 +125,7 @@ export const uploadProfilePic = async (req, res) => {
   }
 };
 
-// PUT update profile info
+// ✅ PUT update profile info
 export const updateProfile = async (req, res) => {
   try {
     const { name, course, yearLevel } = req.body;
@@ -135,5 +143,3 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Update failed", error: err.message });
   }
 };
-
-    

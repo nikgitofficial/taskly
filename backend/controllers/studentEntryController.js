@@ -2,11 +2,19 @@ import StudentEntry from "../models/StudentEntry.js";
 import cloudinary from "../utils/cloudinary.js";
 import streamifier from "streamifier";
 
-// Helper to upload buffer to Cloudinary
-const uploadToCloudinary = (buffer) => {
+const uploadToCloudinary = (buffer, mimetype) => {
+  const resourceType = mimetype === "application/pdf" ? "raw" : "auto";
+
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { resource_type: "auto" },
+      {
+        resource_type: auto,
+        folder: "student_entries",
+        type: "upload",
+        use_filename: true,
+        unique_filename: false,
+       
+      },
       (error, result) => {
         if (error) reject(error);
         else resolve(result);
@@ -16,7 +24,8 @@ const uploadToCloudinary = (buffer) => {
   });
 };
 
-// ✅ Create Entry with File Upload
+
+// ✅ Create Entry
 export const createEntry = async (req, res) => {
   try {
     const { title, description, category, date } = req.body;
@@ -30,7 +39,7 @@ export const createEntry = async (req, res) => {
       fileName = result.original_filename;
     }
 
-    const newEntry = await StudentEntry.create({
+    const newEntry = new StudentEntry({
       userId: req.user.id,
       title,
       description,
@@ -38,33 +47,40 @@ export const createEntry = async (req, res) => {
       date,
       fileUrl,
       fileName,
-      user: req.user.id,
     });
 
-    res.status(201).json(newEntry);
+    const saved = await newEntry.save();
+    res.status(201).json(saved);
   } catch (err) {
-    console.error(err);
+    console.error("❌ Create Entry Error:", err);
     res.status(500).json({ message: "Failed to create entry" });
   }
 };
 
-// ✅ Get Entries (filtered by user)
+// ✅ Get Entries by User
 export const getEntries = async (req, res) => {
   try {
     const entries = await StudentEntry.find({ userId: req.user.id }).sort({ createdAt: -1 });
     res.json(entries);
   } catch (err) {
+    console.error("❌ Fetch Entries Error:", err);
     res.status(500).json({ message: "Failed to fetch entries" });
   }
 };
 
-// ✅ Update Entry (with optional file upload)
+// ✅ Update Entry
 export const updateEntry = async (req, res) => {
   try {
     const entry = await StudentEntry.findOne({ _id: req.params.id, userId: req.user.id });
     if (!entry) return res.status(404).json({ message: "Entry not found" });
 
-    const updateData = req.body;
+    const updateData = {
+      title: req.body.title,
+      description: req.body.description,
+      category: req.body.category,
+      date: req.body.date,
+      done: req.body.done,
+    };
 
     if (req.file) {
       const result = await uploadToCloudinary(req.file.buffer);
@@ -73,9 +89,9 @@ export const updateEntry = async (req, res) => {
     }
 
     const updated = await StudentEntry.findByIdAndUpdate(entry._id, updateData, { new: true });
-
     res.json(updated);
   } catch (err) {
+    console.error("❌ Update Entry Error:", err);
     res.status(500).json({ message: "Failed to update entry" });
   }
 };
@@ -87,10 +103,12 @@ export const deleteEntry = async (req, res) => {
       _id: req.params.id,
       userId: req.user.id,
     });
+
     if (!deleted) return res.status(404).json({ message: "Entry not found" });
 
     res.json({ message: "Entry deleted" });
   } catch (err) {
+    console.error("❌ Delete Entry Error:", err);
     res.status(500).json({ message: "Failed to delete entry" });
   }
 };
