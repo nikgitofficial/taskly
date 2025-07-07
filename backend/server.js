@@ -18,47 +18,51 @@ const app = express();
 // ✅ Allow both local dev and production frontend URLs
 const allowedOrigins = [
   "http://localhost:5173",                   // Local dev
-  process.env.CLIENT_URL?.replace(/\/$/, "") // Vercel (no trailing slash)
+  process.env.CLIENT_URL?.replace(/\/$/, "") // Deployed frontend
 ];
 
-// CORS configuration
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
-        console.log("✅ CORS allowed:", origin);
-        callback(null, true);
-      } else {
-        console.warn("❌ CORS blocked:", origin);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+// ✅ CORS configuration
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+      console.log("✅ CORS allowed:", origin);
+      callback(null, true);
+    } else {
+      console.warn("❌ CORS blocked:", origin);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200, // legacy browser support
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ Handle preflight requests
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Route handlers
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/student-entries", studentEntryRoutes);
 app.use("/api/students", studentRoutes);
 
-// Optional: Simple health check route
+// Health check
 app.get("/", (req, res) => {
   res.send("🚀 Taskly backend is running!");
 });
 
-// DB connection and server start
+// Connect to MongoDB and start server
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () =>
-      console.log(`✅ Server running on port ${PORT}`)
-    );
+    app.listen(PORT, () => {
+      console.log(`✅ Server running on port ${PORT}`);
+    });
   })
   .catch((err) => console.error("❌ MongoDB connection error:", err));
