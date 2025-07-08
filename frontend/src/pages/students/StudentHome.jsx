@@ -130,53 +130,53 @@ const StudentHome = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { title, description, category, date, file } = form;
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  const { title, description, category, date, file } = form;
 
-    if (!title || !description || !category || !date) {
-      alert("Please fill in all required fields.");
-      return;
+  if (!title || !description || !category || !date) {
+    alert("Please fill in all required fields.");
+    return;
+  }
+
+  setSubmitting(true);
+  const token = localStorage.getItem("token");
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("description", description);
+  formData.append("category", category);
+  formData.append("date", date);
+  if (file) formData.append("file", file);
+
+  // ✅ Add this to debug
+  console.log("📤 Uploading FormData:");
+  for (const pair of formData.entries()) {
+    console.log(pair[0], pair[1]);
+  }
+
+  try {
+    if (editingId) {
+      await axios.put(`/student-entries/${editingId}`, formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackMsg("Entry updated successfully!");
+    } else {
+      await axios.post("/student-entries", formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackMsg("Entry created successfully!");
     }
 
-    setSubmitting(true);
-    const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("category", category);
-    formData.append("date", date);
-    if (file) formData.append("file", file);
-
-    try {
-      if (editingId) {
-        await axios.put(`/student-entries/${editingId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-        setSnackMsg("Entry updated successfully!");
-      } else {
-        await axios.post("/student-entries", formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-        setSnackMsg("Entry created successfully!");
-      }
-
-      handleClose();
-      await fetchEntries();
-      setSnackOpen(true);
-    } catch (error) {
-      console.error("❌ Error submitting form:", error?.response || error);
-      alert("Failed to submit entry");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    handleClose();
+    await fetchEntries();
+    setSnackOpen(true);
+  } catch (error) {
+    console.error("❌ Error submitting form:", error?.response?.data || error);
+    alert("Failed to submit entry");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const confirmDelete = (entry) => {
     setEntryToDelete(entry);

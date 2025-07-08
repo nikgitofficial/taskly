@@ -1,16 +1,16 @@
 import express from "express";
+import multer from "multer";
+import { verifyToken } from "../middleware/verifyToken.js";
 import {
   createEntry,
   getEntries,
   updateEntry,
   deleteEntry,
 } from "../controllers/studentEntryController.js";
-import { verifyToken } from "../middleware/verifyToken.js";
-import { upload } from "../middleware/upload.js"; // memory multer
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-// Routes with Cloudinary file upload support
 router.post("/", verifyToken, upload.single("file"), createEntry);
 router.get("/", verifyToken, getEntries);
 router.put("/:id", verifyToken, upload.single("file"), updateEntry);
