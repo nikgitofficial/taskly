@@ -103,24 +103,6 @@ const StudentHome = () => {
     setFilteredEntries(filtered);
   };
 
-  const handlePreview = (url) => {
-    const ext = url.split(".").pop().toLowerCase();
-    if (["pdf", "jpg", "jpeg", "png", "gif"].includes(ext)) {
-      const type = ext === "pdf" ? "pdf" : "image";
-      const viewUrl =
-        type === "pdf"
-          ? `https://docs.google.com/gview?url=${encodeURIComponent(
-              url
-            )}&embedded=true`
-          : url;
-      setPreviewType(type);
-      setPreviewUrl(viewUrl);
-      setPreviewOpen(true);
-    } else {
-      alert("Unsupported file type.");
-    }
-  };
-
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "file") {
@@ -130,75 +112,52 @@ const StudentHome = () => {
     }
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  const { title, description, category, date, file } = form;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const { title, description, category, date, file } = form;
 
-  if (!title || !description || !category || !date) {
-    alert("Please fill in all required fields.");
-    return;
-  }
-
-  setSubmitting(true);
-  const token = localStorage.getItem("token");
-  const formData = new FormData();
-  formData.append("title", title);
-  formData.append("description", description);
-  formData.append("category", category);
-  formData.append("date", date);
-  if (file) formData.append("file", file);
-
-  // ✅ Add this to debug
-  console.log("📤 Uploading FormData:");
-  for (const pair of formData.entries()) {
-    console.log(pair[0], pair[1]);
-  }
-
-  try {
-    if (editingId) {
-      await axios.put(`/student-entries/${editingId}`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSnackMsg("Entry updated successfully!");
-    } else {
-      await axios.post("/student-entries", formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSnackMsg("Entry created successfully!");
+    if (!title || !description || !category || !date) {
+      alert("Please fill in all required fields.");
+      return;
     }
 
-    handleClose();
-    await fetchEntries();
-    setSnackOpen(true);
-  } catch (error) {
-    console.error("❌ Error submitting form:", error?.response?.data || error);
-    alert("Failed to submit entry");
-  } finally {
-    setSubmitting(false);
-  }
-};
+    setSubmitting(true);
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("category", category);
+    formData.append("date", date);
+    if (file) formData.append("file", file);
 
-  const confirmDelete = (entry) => {
-    setEntryToDelete(entry);
-    setDeleteDialogOpen(true);
-  };
+    console.log("📤 Uploading FormData:");
+    for (const pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
 
-  const handleConfirmDelete = async () => {
-    setDeleting(true);
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`/student-entries/${entryToDelete._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setEntries((prev) => prev.filter((e) => e._id !== entryToDelete._id));
-      setSnackMsg("Entry deleted successfully!");
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`, // DO NOT include Content-Type
+        },
+      };
+
+      if (editingId) {
+        await axios.put(`/student-entries/${editingId}`, formData, config);
+        setSnackMsg("Entry updated successfully!");
+      } else {
+        await axios.post("/student-entries", formData, config);
+        setSnackMsg("Entry created successfully!");
+      }
+
+      handleClose();
+      await fetchEntries();
       setSnackOpen(true);
-    } catch {
-      alert("Failed to delete entry");
+    } catch (error) {
+      console.error("❌ Error submitting form:", error?.response?.data || error.message);
+      alert("Failed to submit entry");
     } finally {
-      setDeleting(false);
-      setDeleteDialogOpen(false);
-      setEntryToDelete(null);
+      setSubmitting(false);
     }
   };
 
@@ -216,6 +175,32 @@ const StudentHome = () => {
       setSnackOpen(true);
     } catch {
       alert("Failed to update status");
+    }
+  };
+
+  const confirmDelete = (entry) => {
+    setEntryToDelete(entry);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`/student-entries/${entryToDelete._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setEntries((prev) =>
+        prev.filter((e) => e._id !== entryToDelete._id)
+      );
+      setSnackMsg("Entry deleted successfully!");
+      setSnackOpen(true);
+    } catch {
+      alert("Failed to delete entry");
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setEntryToDelete(null);
     }
   };
 
@@ -238,21 +223,30 @@ const StudentHome = () => {
     if (fileInputRef.current) fileInputRef.current.value = null;
   };
 
+  const handlePreview = (url) => {
+    const ext = url.split(".").pop().toLowerCase();
+    if (["pdf", "jpg", "jpeg", "png", "gif"].includes(ext)) {
+      const type = ext === "pdf" ? "pdf" : "image";
+      const viewUrl =
+        type === "pdf"
+          ? `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`
+          : url;
+      setPreviewType(type);
+      setPreviewUrl(viewUrl);
+      setPreviewOpen(true);
+    } else {
+      alert("Unsupported file type.");
+    }
+  };
+
   return (
     <Box sx={{ p: isMobile ? 2 : 4 }}>
       <Typography variant={isMobile ? "h5" : "h4"} gutterBottom>
         Student Home
       </Typography>
 
-      {/* Search and Filter */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          gap: 2,
-          mb: 3,
-        }}
-      >
+      {/* Search & Filter */}
+      <Box sx={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 2, mb: 3 }}>
         <TextField
           label="Search"
           value={search}
@@ -286,30 +280,16 @@ const StudentHome = () => {
         </TextField>
       </Box>
 
-      <Button
-        variant="contained"
-        onClick={() => setOpen(true)}
-        sx={{ mb: 2 }}
-        fullWidth={isMobile}
-      >
+      <Button variant="contained" onClick={() => setOpen(true)} sx={{ mb: 2 }} fullWidth={isMobile}>
         + Create New Entry
       </Button>
 
-      {/* Table */}
+      {/* Entries Table */}
       <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
-              {[
-                "Title",
-                "Description",
-                "Category",
-                "Posted",
-                "Due",
-                "File",
-                "Status",
-                "Actions",
-              ].map((head) => (
+              {["Title", "Description", "Category", "Posted", "Due", "File", "Status", "Actions"].map((head) => (
                 <TableCell
                   key={head}
                   sx={{ color: "#fff", fontWeight: "bold", backgroundColor: "#000" }}
@@ -322,15 +302,11 @@ const StudentHome = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
-                  <Typography variant="body2">Loading...</Typography>
-                </TableCell>
+                <TableCell colSpan={8} align="center">Loading...</TableCell>
               </TableRow>
             ) : filteredEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
-                  <Typography variant="body2">No entries found.</Typography>
-                </TableCell>
+                <TableCell colSpan={8} align="center">No entries found.</TableCell>
               </TableRow>
             ) : (
               filteredEntries.map((entry) => (
@@ -343,50 +319,32 @@ const StudentHome = () => {
                   <TableCell>
                     {entry.fileUrl ? (
                       <>
-                        <Button size="small" onClick={() => handlePreview(entry.fileUrl)}>
-                          👁️ Preview
-                        </Button>
+                        <Button size="small" onClick={() => handlePreview(entry.fileUrl)}>👁️ Preview</Button>
                         &nbsp;|&nbsp;
                         <a
                           href={entry.fileUrl.replace("/upload/", "/upload/fl_attachment/")}
                           download
                           style={{ textDecoration: "none" }}
-                        >
-                          📥 Download
-                        </a>
+                        >📥 Download</a>
                       </>
                     ) : (
-                      <Typography variant="body2" color="textSecondary">
-                        No File
-                      </Typography>
+                      <Typography variant="body2" color="textSecondary">No File</Typography>
                     )}
                   </TableCell>
                   <TableCell>
-                    <Typography
-                      sx={{
-                        fontSize: "0.75rem",
-                        fontWeight: "bold",
-                        color: entry.done ? "#2e7d32" : "#ef6c00",
-                      }}
-                    >
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: "bold", color: entry.done ? "#2e7d32" : "#ef6c00" }}>
                       {entry.done ? "Done" : "Pending"}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Tooltip title={entry.done ? "Mark as Undone" : "Mark as Done"}>
-                      <IconButton onClick={() => handleToggleDone(entry)} color="success">
-                        <CheckCircleIcon />
-                      </IconButton>
+                      <IconButton onClick={() => handleToggleDone(entry)} color="success"><CheckCircleIcon /></IconButton>
                     </Tooltip>
                     <Tooltip title="Edit">
-                      <IconButton onClick={() => handleEdit(entry)} color="primary">
-                        <EditIcon />
-                      </IconButton>
+                      <IconButton onClick={() => handleEdit(entry)} color="primary"><EditIcon /></IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
-                      <IconButton onClick={() => confirmDelete(entry)} color="error">
-                        <DeleteIcon />
-                      </IconButton>
+                      <IconButton onClick={() => confirmDelete(entry)} color="error"><DeleteIcon /></IconButton>
                     </Tooltip>
                   </TableCell>
                 </TableRow>
@@ -401,13 +359,7 @@ const StudentHome = () => {
         <DialogTitle>File Preview</DialogTitle>
         <DialogContent dividers>
           {previewType === "pdf" ? (
-            <iframe
-              src={previewUrl}
-              title="PDF Preview"
-              width="100%"
-              height="600px"
-              style={{ border: "none" }}
-            />
+            <iframe src={previewUrl} title="PDF Preview" width="100%" height="600px" style={{ border: "none" }} />
           ) : (
             <Box display="flex" justifyContent="center">
               <img src={previewUrl} alt="Preview" style={{ maxWidth: "100%", maxHeight: 500 }} />
@@ -415,9 +367,7 @@ const StudentHome = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPreviewOpen(false)} color="primary">
-            Close
-          </Button>
+          <Button onClick={() => setPreviewOpen(false)} color="primary">Close</Button>
         </DialogActions>
       </Dialog>
 
@@ -428,23 +378,17 @@ const StudentHome = () => {
         onClose={() => setSnackOpen(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={() => setSnackOpen(false)} severity="success">
-          {snackMsg}
-        </Alert>
+        <Alert onClose={() => setSnackOpen(false)} severity="success">{snackMsg}</Alert>
       </Snackbar>
 
       {/* Delete Confirmation */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent dividers>
-          <Typography>
-            Are you sure you want to delete <strong>{entryToDelete?.title}</strong>?
-          </Typography>
+          <Typography>Are you sure you want to delete <strong>{entryToDelete?.title}</strong>?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">
-            Cancel
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">Cancel</Button>
           <Button
             onClick={handleConfirmDelete}
             color="error"
@@ -493,9 +437,7 @@ const StudentHome = () => {
               required
             >
               {categories.slice(1).map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
+                <MenuItem key={option} value={option}>{option}</MenuItem>
               ))}
             </TextField>
             <TextField
@@ -519,9 +461,7 @@ const StudentHome = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} color="secondary">
-            Cancel
-          </Button>
+          <Button onClick={handleClose} color="secondary">Cancel</Button>
           <Button
             onClick={handleSubmit}
             variant="contained"
