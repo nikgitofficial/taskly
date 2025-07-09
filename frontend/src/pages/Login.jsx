@@ -12,7 +12,6 @@ import {
   IconButton,
   CircularProgress,
   Avatar,
-  Fade,
   Snackbar,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
@@ -37,11 +36,8 @@ const Login = () => {
 
     try {
       const user = await login(email, password);
-
-      // Show snackbar
       setSnackOpen(true);
 
-      // Delay navigation to allow user to see feedback
       setTimeout(() => {
         if (user?.role === "student") navigate("/student-dashboard");
         else if (user?.role === "admin") navigate("/admin-dashboard");
@@ -55,64 +51,67 @@ const Login = () => {
   };
 
   return (
-    <Container
-      maxWidth="sm"
-      sx={{
-        mt: { xs: 4, md: 10 },
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "80vh",
-      }}
-    >
-      <Paper
-        elevation={4}
-        sx={{
-          p: 4,
-          borderRadius: 3,
-          width: "100%",
-          maxWidth: 420,
-        }}
-      >
-        <Fade in={loading}>
-          <Box
+    <>
+      {loading ? (
+        <Box
+           sx={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff", // optional: white background
+    zIndex: 9999, // ensure it's above everything
+  }}
+        >
+          <Box sx={{ position: "relative", width: 80, height: 80, mb: 2 }}>
+            <CircularProgress
+              size={80}
+              thickness={4}
+              sx={{ color: "#1976d2", position: "absolute", top: 0, left: 0 }}
+            />
+            <Avatar
+              src={logo}
+              alt="logo"
+              sx={{
+                width: 40,
+                height: 40,
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                backgroundColor: "white",
+              }}
+            />
+          </Box>
+          <Typography variant="body1" color="text.secondary">
+            Logging in...
+          </Typography>
+        </Box>
+      ) : (
+        <Container
+          maxWidth="sm"
+          sx={{
+            mt: { xs: 4, md: 10 },
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "80vh",
+          }}
+        >
+          <Paper
+            elevation={4}
             sx={{
-              py: 6,
-              textAlign: "center",
-              display: loading ? "flex" : "none",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
+              p: 4,
+              borderRadius: 3,
+              width: "100%",
+              maxWidth: 420,
             }}
           >
-            <Box sx={{ position: "relative", width: 80, height: 80, mb: 2 }}>
-              <CircularProgress
-                size={80}
-                thickness={4}
-                sx={{ color: "#1976d2", position: "absolute", top: 0, left: 0 }}
-              />
-              <Avatar
-                src={logo}
-                alt="logo"
-                sx={{
-                  width: 40,
-                  height: 40,
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  backgroundColor: "white",
-                }}
-              />
-            </Box>
-            <Typography variant="body1" color="text.secondary">
-              Logging in...
-            </Typography>
-          </Box>
-        </Fade>
-
-        {!loading && (
-          <>
             <Typography variant="h4" align="center" gutterBottom>
               Login
             </Typography>
@@ -183,11 +182,10 @@ const Login = () => {
                 Register
               </Link>
             </Typography>
-          </>
-        )}
-      </Paper>
+          </Paper>
+        </Container>
+      )}
 
-      {/* Snackbar for login */}
       <Snackbar
         open={snackOpen}
         autoHideDuration={3000}
@@ -195,7 +193,7 @@ const Login = () => {
         message="Login successful"
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
-    </Container>
+    </>
   );
 };
 

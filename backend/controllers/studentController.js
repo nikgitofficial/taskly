@@ -1,145 +1,86 @@
 import Student from "../models/Student.js";
-import StudentEntry from "../models/StudentEntry.js";
-import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
+import cloudinary from "../utils/cloudinary.js";
+import { Readable } from "stream";
 
-// ✅ GET /student/me - fetch or auto-create student profile
+// Convert Buffer to Stream
+function bufferToStream(buffer) {
+  const readable = new Readable();
+  readable.push(buffer);
+  readable.push(null);
+  return readable;
+}
+
+// @desc    Get student profile
+// @route   GET /api/students/profile
+// @access  Private
 export const getStudentProfile = async (req, res) => {
   try {
-    let profile = await Student.findOne({ userId: req.user.id });
-
-    if (!profile) {
-      profile = await Student.create({
-        userId: req.user.id,
-        name: "",
-        course: "",
-        yearLevel: "",
-        profilePic: ""
-      });
+    const student = await Student.findOne({ user: req.user.id });
+    if (!student) {
+      // If student profile doesn't exist, create a blank one
+      const newStudent = new Student({ user: req.user.id });
+      await newStudent.save();
+      return res.json(newStudent);
     }
-
-    return res.json({
-      name: profile.name,
-      course: profile.course,
-      yearLevel: profile.yearLevel,
-      profilePic: profile.profilePic || ""
-    });
+    res.json(student);
   } catch (err) {
-    console.error("Error in getStudentProfile:", err);
-    return res.status(500).json({ message: "Failed to fetch profile" });
+    console.error("Error getting student profile:", err);
+    res.status(500).json({ message: "Failed to fetch profile" });
   }
 };
 
-// ✅ PUT /student/me - update student profile
+// @desc    Update student profile
+// @route   PUT /api/students/profile
+// @access  Private
 export const updateStudentProfile = async (req, res) => {
   try {
     const { name, course, yearLevel } = req.body;
     const updated = await Student.findOneAndUpdate(
-      { userId: req.user.id },
+      { user: req.user.id },
       { name, course, yearLevel },
-      { new: true }
+      { new: true, upsert: true }
     );
-
-    if (!updated) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
-
-    return res.json({
-      name: updated.name,
-      course: updated.course,
-      yearLevel: updated.yearLevel,
-      profilePic: updated.profilePic || ""
-    });
+    res.json(updated);
   } catch (err) {
-    console.error("Error in updateStudentProfile:", err);
-    return res.status(500).json({ message: "Failed to update profile" });
+    console.error("Error updating student profile:", err);
+    res.status(500).json({ message: "Failed to update profile" });
   }
 };
 
-// ✅ PUT /student/entry/:id - update a specific student entry
-export const updateEntry = async (req, res) => {
+// @desc    Upload profile picture to Cloudinary
+// @route   POST /api/students/profile-pic
+// @access  Private
+export const uploadProfilePicCloudinary = async (req, res) => {
   try {
-    const entry = await StudentEntry.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.id },
-      req.body,
-      { new: true }
-    );
-    if (!entry) {
-      return res.status(404).json({ message: "Entry not found" });
-    }
-    return res.json(entry);
-  } catch (err) {
-    console.error("Error in updateEntry:", err);
-    return res.status(500).json({ message: "Failed to update entry" });
-  }
-};
-
-// ✅ DELETE /student/entry/:id - delete a specific student entry
-export const deleteEntry = async (req, res) => {
-  try {
-    const deleted = await StudentEntry.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.id,
-    });
-    if (!deleted) {
-      return res.status(404).json({ message: "Entry not found" });
-    }
-    return res.json({ message: "Entry deleted" });
-  } catch (err) {
-    console.error("Error in deleteEntry:", err);
-    return res.status(500).json({ message: "Failed to delete entry" });
-  }
-};
-
-// ✅ POST /student/profile-pic - Upload profile picture to Cloudinary
-export const uploadProfilePic = async (req, res) => {
-  try {
-    if (!req.file || !req.file.path) {
-      return res.status(400).json({ message: "No file uploaded" });
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded." });
     }
 
-    // Upload to Cloudinary
-    const cloudRes = await cloudinary.uploader.upload(req.file.path, {
-      folder: "student-profile-pics",
-      resource_type: "image",
-    });
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "student_profiles",
+        public_id: `user_${req.user.id}`,
+        overwrite: true,
+      },
+      async (error, result) => {
+        if (error) {
+          console.error("Cloudinary error:", error);
+          return res.status(500).json({ message: "Upload failed", error });
+        }
 
-    // Cleanup local temp file
-    fs.unlinkSync(req.file.path);
+        const updated = await Student.findOneAndUpdate(
+          { user: req.user.id },
+          { profilePic: result.secure_url },
+          { new: true }
+        );
 
-    const updated = await Student.findOneAndUpdate(
-      { userId: req.user.id },
-      { profilePic: cloudRes.secure_url },
-      { new: true }
+        res.json(updated);
+      }
     );
 
-    res.json({
-      name: updated.name,
-      course: updated.course,
-      yearLevel: updated.yearLevel,
-      profilePic: updated.profilePic,
-    });
+    bufferToStream(req.file.buffer).pipe(stream);
   } catch (err) {
-    console.error("Upload failed:", err);
-    res.status(500).json({ message: "Upload failed", error: err.message });
-  }
-};
-
-// ✅ PUT update profile info
-export const updateProfile = async (req, res) => {
-  try {
-    const { name, course, yearLevel } = req.body;
-
-    const student = await Student.findOneAndUpdate(
-      { userId: req.user.id },
-      { name, course, yearLevel },
-      { new: true }
-    );
-
-    if (!student) return res.status(404).json({ message: "Student not found" });
-
-    res.json(student);
-  } catch (err) {
-    res.status(500).json({ message: "Update failed", error: err.message });
+    console.error("Server error during profile pic upload:", err);
+    res.status(500).json({ message: "Server error uploading profile pic" });
   }
 };

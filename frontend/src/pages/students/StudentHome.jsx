@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
+// src/pages/student/StudentHome.jsx
+import React, { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import {
   Box,
@@ -47,7 +48,6 @@ const StudentHome = () => {
     description: "",
     category: "",
     date: "",
-    file: null,
   });
   const [entries, setEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
@@ -61,12 +61,6 @@ const StudentHome = () => {
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
-
-  const fileInputRef = useRef();
-
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [previewType, setPreviewType] = useState("");
 
   useEffect(() => {
     fetchEntries();
@@ -104,17 +98,13 @@ const StudentHome = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "file") {
-      setForm((prev) => ({ ...prev, file: files[0] }));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
-    }
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { title, description, category, date, file } = form;
+    const { title, description, category, date } = form;
 
     if (!title || !description || !category || !date) {
       alert("Please fill in all required fields.");
@@ -123,30 +113,19 @@ const StudentHome = () => {
 
     setSubmitting(true);
     const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("category", category);
-    formData.append("date", date);
-    if (file) formData.append("file", file);
 
-    console.log("📤 Uploading FormData:");
-    for (const pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
-    }
+    const data = { title, description, category, date };
 
     try {
       const config = {
-        headers: {
-          Authorization: `Bearer ${token}`, // DO NOT include Content-Type
-        },
+        headers: { Authorization: `Bearer ${token}` },
       };
 
       if (editingId) {
-        await axios.put(`/student-entries/${editingId}`, formData, config);
+        await axios.put(`/student-entries/${editingId}`, data, config);
         setSnackMsg("Entry updated successfully!");
       } else {
-        await axios.post("/student-entries", formData, config);
+        await axios.post("/student-entries", data, config);
         setSnackMsg("Entry created successfully!");
       }
 
@@ -210,7 +189,6 @@ const StudentHome = () => {
       description: entry.description,
       category: entry.category,
       date: entry.date?.slice(0, 10),
-      file: null,
     });
     setEditingId(entry._id);
     setOpen(true);
@@ -219,24 +197,7 @@ const StudentHome = () => {
   const handleClose = () => {
     setOpen(false);
     setEditingId(null);
-    setForm({ title: "", description: "", category: "", date: "", file: null });
-    if (fileInputRef.current) fileInputRef.current.value = null;
-  };
-
-  const handlePreview = (url) => {
-    const ext = url.split(".").pop().toLowerCase();
-    if (["pdf", "jpg", "jpeg", "png", "gif"].includes(ext)) {
-      const type = ext === "pdf" ? "pdf" : "image";
-      const viewUrl =
-        type === "pdf"
-          ? `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`
-          : url;
-      setPreviewType(type);
-      setPreviewUrl(viewUrl);
-      setPreviewOpen(true);
-    } else {
-      alert("Unsupported file type.");
-    }
+    setForm({ title: "", description: "", category: "", date: "" });
   };
 
   return (
@@ -289,7 +250,7 @@ const StudentHome = () => {
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
-              {["Title", "Description", "Category", "Posted", "Due", "File", "Status", "Actions"].map((head) => (
+              {["Title", "Description", "Category", "Posted", "Due", "Status", "Actions"].map((head) => (
                 <TableCell
                   key={head}
                   sx={{ color: "#fff", fontWeight: "bold", backgroundColor: "#000" }}
@@ -302,11 +263,11 @@ const StudentHome = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">Loading...</TableCell>
+                <TableCell colSpan={7} align="center">Loading...</TableCell>
               </TableRow>
             ) : filteredEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">No entries found.</TableCell>
+                <TableCell colSpan={7} align="center">No entries found.</TableCell>
               </TableRow>
             ) : (
               filteredEntries.map((entry) => (
@@ -316,21 +277,6 @@ const StudentHome = () => {
                   <TableCell>{entry.category}</TableCell>
                   <TableCell>{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    {entry.fileUrl ? (
-                      <>
-                        <Button size="small" onClick={() => handlePreview(entry.fileUrl)}>👁️ Preview</Button>
-                        &nbsp;|&nbsp;
-                        <a
-                          href={entry.fileUrl.replace("/upload/", "/upload/fl_attachment/")}
-                          download
-                          style={{ textDecoration: "none" }}
-                        >📥 Download</a>
-                      </>
-                    ) : (
-                      <Typography variant="body2" color="textSecondary">No File</Typography>
-                    )}
-                  </TableCell>
                   <TableCell>
                     <Typography sx={{ fontSize: "0.75rem", fontWeight: "bold", color: entry.done ? "#2e7d32" : "#ef6c00" }}>
                       {entry.done ? "Done" : "Pending"}
@@ -353,23 +299,6 @@ const StudentHome = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
-      {/* File Preview Dialog */}
-      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>File Preview</DialogTitle>
-        <DialogContent dividers>
-          {previewType === "pdf" ? (
-            <iframe src={previewUrl} title="PDF Preview" width="100%" height="600px" style={{ border: "none" }} />
-          ) : (
-            <Box display="flex" justifyContent="center">
-              <img src={previewUrl} alt="Preview" style={{ maxWidth: "100%", maxHeight: 500 }} />
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPreviewOpen(false)} color="primary">Close</Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Snackbar */}
       <Snackbar
@@ -450,13 +379,6 @@ const StudentHome = () => {
               margin="dense"
               InputLabelProps={{ shrink: true }}
               required
-            />
-            <input
-              type="file"
-              name="file"
-              ref={fileInputRef}
-              onChange={handleChange}
-              style={{ marginTop: 16 }}
             />
           </Box>
         </DialogContent>

@@ -1,20 +1,21 @@
-import express from "express";
+// routes/studentRoutes.js
+import express from "express"; // ✅ Needed to use express.Router()
+import multer from "multer";   // ✅ Needed for file upload
+
+import { verifyToken } from "../middleware/authMiddleware.js";
 import {
   getStudentProfile,
   updateStudentProfile,
-  uploadProfilePic,
-  updateProfile
+  uploadProfilePicCloudinary,
 } from "../controllers/studentController.js";
-import { verifyToken } from "../middleware/verifyToken.js";
-import multer from "multer";
-import { storage } from "../utils/cloudinary.js";
 
 const router = express.Router();
-const cloudinaryUpload = multer({ storage }); // ✅ renamed for Cloudinary
 
-router.get("/me", verifyToken, getStudentProfile);
-router.put("/me", verifyToken, updateStudentProfile);
-router.post("/profile-pic", verifyToken, cloudinaryUpload.single("file"), uploadProfilePic);
-router.put("/profile", verifyToken, updateProfile);
+// Use memory storage to upload to Cloudinary
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.get("/profile", verifyToken, getStudentProfile);
+router.put("/profile", verifyToken, updateStudentProfile);
+router.post("/profile-pic", verifyToken, upload.single("file"), uploadProfilePicCloudinary);
 
 export default router;

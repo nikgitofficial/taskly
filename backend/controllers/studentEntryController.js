@@ -1,5 +1,4 @@
 import StudentEntry from "../models/StudentEntry.js";
-import { streamUpload } from "../utils/cloudinary.js";
 
 // ✅ CREATE ENTRY
 export const createEntry = async (req, res) => {
@@ -14,14 +13,6 @@ export const createEntry = async (req, res) => {
       date,
       done: false,
     });
-
-    if (req.file) {
-      console.log("📎 Uploading new file:", req.file.originalname);
-      const result = await streamUpload(req.file.buffer, req.file.mimetype);
-      if (!result?.secure_url) throw new Error("Cloudinary upload failed: No URL returned");
-      newEntry.fileUrl = result.secure_url;
-      console.log("✅ File uploaded:", result.secure_url);
-    }
 
     await newEntry.save();
     res.status(201).json(newEntry);
@@ -55,16 +46,6 @@ export const updateEntry = async (req, res) => {
 
     const { title, description, category, date, done } = req.body;
 
-    // 🔁 Upload new file if provided
-    if (req.file) {
-      console.log("📎 Updating file:", req.file.originalname);
-      const result = await streamUpload(req.file.buffer, req.file.mimetype);
-      if (!result?.secure_url) throw new Error("Cloudinary upload failed: No URL returned");
-      entry.fileUrl = result.secure_url;
-      console.log("✅ File re-uploaded:", result.secure_url);
-    }
-
-    // 🧠 Update only provided fields
     if (title !== undefined) entry.title = title;
     if (description !== undefined) entry.description = description;
     if (category !== undefined) entry.category = category;

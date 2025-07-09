@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import {
   AppBar,
   Toolbar,
@@ -52,6 +53,7 @@ const Navbar = () => {
           { to: "/student-home", label: "Create Entry" },
           { to: "/student-profile", label: "Profile" },
           { to: "/student-dashboard", label: "Dashboard" },
+          { to: "/student-files", label: "Files" }, // ✅ Added Files tab
         ]
       : []),
   ];
@@ -100,7 +102,6 @@ const Navbar = () => {
     <>
       <AppBar position="fixed" sx={{ backgroundColor: "#1e1e1e", px: 3 }}>
         <Toolbar sx={{ justifyContent: "space-between" }}>
-          {/* Logo */}
           <Box
             component={NavLink}
             to="/"
@@ -121,7 +122,6 @@ const Navbar = () => {
             </Typography>
           </Box>
 
-          {/* Navigation */}
           {!isMobile ? (
             <Stack direction="row" spacing={1.5} alignItems="center">
               {user ? (
@@ -226,7 +226,6 @@ const Navbar = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Snackbar */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
@@ -238,7 +237,7 @@ const Navbar = () => {
   );
 };
 
-// ✅ Desktop Nav Button
+// Desktop Nav Button
 const NavButton = ({ to, label }) => (
   <Button
     component={NavLink}

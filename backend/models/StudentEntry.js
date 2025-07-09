@@ -12,8 +12,6 @@ const studentEntrySchema = new mongoose.Schema(
     description: String,
     category: String,
     date: Date,
-    fileUrl: String,
-    fileName: String,
     done: { type: Boolean, default: false },
   },
   { timestamps: true }

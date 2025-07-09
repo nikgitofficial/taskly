@@ -14,16 +14,18 @@ import {
   TextField,
 } from "@mui/material";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
-import axios from "../../api/axios";
 import CloseIcon from "@mui/icons-material/Close";
+import axios from "../../api/axios";
 
 const StudentProfile = () => {
   const { student, user, refreshStudent } = useAuth();
+
   const [profile, setProfile] = useState({
     name: "",
     course: "",
     yearLevel: "",
   });
+
   const [originalProfile, setOriginalProfile] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [profilePicFile, setProfilePicFile] = useState(null);
@@ -31,6 +33,7 @@ const StudentProfile = () => {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Load student profile into form
   useEffect(() => {
     if (student) {
       const data = {
@@ -40,10 +43,11 @@ const StudentProfile = () => {
       };
       setProfile(data);
       setOriginalProfile(data);
-      setPreview(student.profilePic || null);
+      setPreview(student.profilePic || null); // This will be Cloudinary URL if set
     }
   }, [student]);
 
+  // Generate local preview when file selected
   useEffect(() => {
     if (!profilePicFile) return;
     const url = URL.createObjectURL(profilePicFile);
@@ -57,10 +61,17 @@ const StudentProfile = () => {
   };
 
   const handleUpload = async () => {
-    if (!profilePicFile) return;
+    if (!profilePicFile) {
+      alert("Please select a profile picture first.");
+      return;
+    }
+
     setUploading(true);
+
     try {
       const token = localStorage.getItem("token");
+      if (!token) throw new Error("User not authenticated.");
+
       const formData = new FormData();
       formData.append("file", profilePicFile);
 
@@ -73,9 +84,10 @@ const StudentProfile = () => {
 
       await refreshStudent(res.data);
       setProfilePicFile(null);
+      setPreview(res.data.profilePic); // Cloudinary URL
     } catch (err) {
-      console.error("📛 Profile pic upload failed:", err);
-      alert("Failed to upload profile picture.");
+      console.error("❌ Profile pic upload failed:", err.response?.data || err.message || err);
+      alert("Failed to upload profile picture. Check console for details.");
     } finally {
       setUploading(false);
     }
@@ -85,16 +97,19 @@ const StudentProfile = () => {
     setSaving(true);
     try {
       const token = localStorage.getItem("token");
+      if (!token) throw new Error("User not authenticated.");
+
       const res = await axios.put("/students/profile", profile, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
       await refreshStudent(res.data);
       setEditMode(false);
     } catch (err) {
-      console.error("❌ Failed to update profile:", err);
-      alert("Failed to update profile");
+      console.error("❌ Failed to update profile:", err.response?.data || err.message || err);
+      alert("Failed to update profile. Check console for details.");
     } finally {
       setSaving(false);
     }

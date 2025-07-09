@@ -1,3 +1,4 @@
+// src/App.jsx
 import { Routes, Route } from "react-router-dom";
 import { Box } from "@mui/material";
 
@@ -15,6 +16,7 @@ import StudentRoute from "./components/routes/StudentRoute";
 import StudentHome from "./pages/students/StudentHome";
 import StudentDashboard from "./pages/students/StudentDashboard";
 import StudentProfile from "./pages/students/StudentProfile";
+import StudentFiles from "./pages/students/StudentFiles"; // ✅ Import Files Page
 
 const App = () => {
   return (
@@ -30,12 +32,11 @@ const App = () => {
       <Box
         component="main"
         flexGrow={1}
-        mt="64px" // Adjust for Navbar
-        mb="60px" // Adjust for Footer
+        mt="64px"
+        mb="60px"
         px={2}
       >
         <Routes>
-          {/* ✅ Admin-only homepage */}
           <Route
             path="/"
             element={
@@ -44,8 +45,6 @@ const App = () => {
               </PrivateRoute>
             }
           />
-
-          {/* ✅ Student routes */}
           <Route
             path="/student-home"
             element={
@@ -70,17 +69,22 @@ const App = () => {
               </StudentRoute>
             }
           />
+          <Route
+            path="/student-files"
+            element={
+              <StudentRoute>
+                <StudentFiles />
+              </StudentRoute>
+            }
+          />
 
-          {/* Auth routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
-          {/* Fallback for blocked roles */}
           <Route path="/not-authorized" element={<NotAuthorized />} />
         </Routes>
       </Box>
 
-            <Footer />
+      <Footer />
     </Box>
   );
 };

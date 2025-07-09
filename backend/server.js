@@ -3,36 +3,37 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import helmet from "helmet"; // ✅ added helmet
+import helmet from "helmet";
 
 // Routes
 import authRoutes from "./routes/authRoutes.js";
 import studentEntryRoutes from "./routes/studentEntryRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import testUploadRoutes from "./routes/testUpload.js";
+import blobUploadRoutes from "./routes/blobUploadRoute.js";
 
-// Load environment variables
+// Load env vars
 dotenv.config();
 
+// Optional: Debug cloudinary config
 console.log("Cloudinary env vars:", {
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
 });
 
-// Create Express app
+// Init express
 const app = express();
 
-// ✅ Apply security middleware
+// ✅ Security
 app.use(helmet());
 
-// ✅ Allow both local dev and production frontend URLs
+// ✅ CORS config for local + deployed frontend
 const allowedOrigins = [
-  "http://localhost:5173",                   // Local dev
-  process.env.CLIENT_URL?.replace(/\/$/, "") // Vercel (no trailing slash)
+  "http://localhost:5173",
+  process.env.CLIENT_URL?.replace(/\/$/, "")
 ];
 
-// CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -48,29 +49,30 @@ app.use(
   })
 );
 
-// Middleware
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Route handlers
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/student-entries", studentEntryRoutes);
 app.use("/api/students", studentRoutes);
-app.use("/api", testUploadRoutes);
+app.use("/api/test-upload", testUploadRoutes);
+app.use("/api", blobUploadRoutes);
 
 // Health check
 app.get("/", (req, res) => {
   res.send("🚀 Taskly backend is running!");
 });
 
-// Optional: Fallback error handler
+// Error handler
 app.use((err, req, res, next) => {
   console.error("❌ Uncaught Error:", err.message);
   res.status(500).json({ message: err.message || "Internal Server Error" });
 });
 
-// DB connection and server start
+// Mongo + server start
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {

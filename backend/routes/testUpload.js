@@ -1,25 +1,24 @@
 // routes/testUpload.js
 import express from "express";
-import { upload } from "../middleware/upload.js";
-import { streamUpload } from "../utils/cloudinary.js";
+import multer from "multer";
+import { put } from "@vercel/blob";
 
 const router = express.Router();
+const upload = multer();
 
-router.post("/test-upload", upload.single("file"), async (req, res) => {
-  console.log("📥 Incoming file upload test...");
-  console.log("➡️ req.file:", req.file);
-
-  if (!req.file) {
-    return res.status(400).json({ message: "No file uploaded" });
-  }
-
+router.post("/upload", upload.single("file"), async (req, res) => {
   try {
-    const result = await streamUpload(req.file.buffer, req.file.mimetype);
-    console.log("✅ Cloudinary Upload Success:", result);
-    res.status(200).json({ url: result.secure_url });
-  } catch (error) {
-    console.error("❌ Cloudinary Upload Error:", error);
-    res.status(500).json({ message: "Upload failed", error: error.message });
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: "No file uploaded" });
+
+    const blob = await put(file.originalname, file.buffer, {
+      access: "public", // or "private"
+    });
+
+    res.status(200).json({ url: blob.url });
+  } catch (err) {
+    console.error("❌ Vercel Blob upload error:", err.message);
+    res.status(500).json({ message: "Upload failed", error: err.message });
   }
 });
 
