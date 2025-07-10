@@ -13,9 +13,12 @@ router.post("/blob/upload", upload.single("file"), async (req, res) => {
   try {
     const file = req.file;
 
+    if (!file) return res.status(400).json({ message: "No file uploaded" });
+
     const { url, pathname } = await put(file.originalname, file.buffer, {
       access: "public",
       addRandomSuffix: true,
+      token: process.env.BLOB_READ_WRITE_TOKEN, // ✅ REQUIRED
     });
 
     const newBlobFile = new BlobFile({
@@ -44,14 +47,14 @@ router.get("/blob/files", async (req, res) => {
   }
 });
 
-// ✅ DELETE FILE (from Vercel + MongoDB)
+// ✅ DELETE FILE (from Vercel Blob + MongoDB)
 router.delete("/blob/files/:id", async (req, res) => {
   try {
     const file = await BlobFile.findById(req.params.id);
     if (!file) return res.status(404).json({ message: "File not found" });
 
     await del(file.pathname, {
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: process.env.BLOB_READ_WRITE_TOKEN, // ✅ REQUIRED
     });
 
     await BlobFile.findByIdAndDelete(req.params.id);
@@ -74,20 +77,22 @@ router.put("/blob/files/:id", async (req, res) => {
       return res.status(404).json({ message: "File not found" });
     }
 
-    // Use the full URL stored in DB, no need to construct oldUrl manually
+    // Re-fetch original content
     const response = await axios.get(file.url, { responseType: "arraybuffer" });
-
     const buffer = Buffer.from(response.data);
 
+    // Re-upload with new name
     const { url, pathname } = await put(newName, buffer, {
       access: "public",
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: process.env.BLOB_READ_WRITE_TOKEN, // ✅ REQUIRED
     });
 
+    // Delete old version
     await del(file.pathname, {
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: process.env.BLOB_READ_WRITE_TOKEN, // ✅ REQUIRED
     });
 
+    // Update DB
     file.name = newName;
     file.url = url;
     file.pathname = pathname;
@@ -99,7 +104,5 @@ router.put("/blob/files/:id", async (req, res) => {
     res.status(500).json({ message: "Rename failed" });
   }
 });
-
-
 
 export default router;
