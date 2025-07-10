@@ -30,6 +30,7 @@ import {
   InputLabel,
 } from "@mui/material";
 import { Delete, Edit, Visibility, Download } from "@mui/icons-material";
+import { blue, green, red } from "@mui/material/colors";
 
 // Get base URL from env or default localhost
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -39,26 +40,32 @@ const FileUploader = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+
   const [snackOpen, setSnackOpen] = useState(false);
   const [snackMsg, setSnackMsg] = useState("");
+  const [snackSeverity, setSnackSeverity] = useState("success");
+  const [snackColor, setSnackColor] = useState(undefined);
 
-  // Rename dialog states
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [fileToRename, setFileToRename] = useState(null);
   const [renaming, setRenaming] = useState(false);
 
-  // Delete confirmation dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Search & filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [fileTypeFilter, setFileTypeFilter] = useState("all");
 
-  // Ref to clear file input after upload
   const fileInputRef = useRef(null);
+
+  const showSnack = (msg, severity = "success", color = undefined) => {
+    setSnackMsg(msg);
+    setSnackSeverity(severity);
+    setSnackColor(color);
+    setSnackOpen(true);
+  };
 
   useEffect(() => {
     fetchFiles();
@@ -71,8 +78,7 @@ const FileUploader = () => {
       setUploadedFiles(res.data);
     } catch (err) {
       console.error("❌ Failed to load files:", err.message);
-      setSnackMsg("❌ Failed to load files");
-      setSnackOpen(true);
+      showSnack("❌ Failed to load files", "error");
     } finally {
       setLoading(false);
     }
@@ -87,22 +93,15 @@ const FileUploader = () => {
 
     try {
       await axios.post(`${API_BASE_URL}/api/blob/upload`, formData);
-      setLoading(true); // Show spinner while fetching updated list
       await fetchFiles();
-      setSnackMsg("✅ File uploaded successfully");
-      setSnackOpen(true);
-
+      showSnack("✅ File uploaded successfully", "success", green[600]);
       setFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""; // Clear chosen file display
-      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       console.error("❌ Upload failed:", err.message);
-      setSnackMsg("❌ Upload failed");
-      setSnackOpen(true);
+      showSnack("❌ Upload failed", "error");
     } finally {
       setUploading(false);
-      setLoading(false);
     }
   };
 
@@ -114,8 +113,7 @@ const FileUploader = () => {
 
   const confirmRename = async () => {
     if (!newFileName.trim()) {
-      setSnackMsg("❌ New file name cannot be empty");
-      setSnackOpen(true);
+      showSnack("❌ New file name cannot be empty", "error");
       return;
     }
     setRenaming(true);
@@ -123,13 +121,12 @@ const FileUploader = () => {
       await axios.put(`${API_BASE_URL}/api/blob/files/${fileToRename._id}`, {
         newName: newFileName,
       });
-      setSnackMsg("✏️ File renamed");
+      showSnack("✏️ File renamed", "success", green[700]);
       await fetchFiles();
       setRenameDialogOpen(false);
     } catch (err) {
       console.error("❌ Rename failed:", err.message);
-      setSnackMsg("❌ Rename failed");
-      setSnackOpen(true);
+      showSnack("❌ Rename failed", "error");
     } finally {
       setRenaming(false);
       setFileToRename(null);
@@ -146,13 +143,12 @@ const FileUploader = () => {
     setDeleting(true);
     try {
       await axios.delete(`${API_BASE_URL}/api/blob/files/${fileToDelete._id}`);
-      setSnackMsg("🗑️ File deleted");
+      showSnack("🗑️ File deleted", "success", red[700]);
       await fetchFiles();
       setDeleteDialogOpen(false);
     } catch (err) {
       console.error("❌ Delete failed:", err.message);
-      setSnackMsg("❌ Delete failed");
-      setSnackOpen(true);
+      showSnack("❌ Delete failed", "error");
     } finally {
       setDeleting(false);
       setFileToDelete(null);
@@ -168,22 +164,20 @@ const FileUploader = () => {
       link.setAttribute("download", name);
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link);
+      link.remove();
       window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error("❌ Download failed:", error.message);
-      setSnackMsg("❌ Download failed");
-      setSnackOpen(true);
+      showSnack("⬇️ File downloaded", "info", blue[600]);
+    } catch (err) {
+      console.error("❌ Download failed:", err.message);
+      showSnack("❌ Download failed", "error");
     }
   };
 
-  // Get unique file types for filter dropdown
   const fileTypes = useMemo(() => {
     const types = uploadedFiles.map((f) => f.type);
     return ["all", ...Array.from(new Set(types))];
   }, [uploadedFiles]);
 
-  // Filter files based on search and type filter
   const filteredFiles = useMemo(() => {
     return uploadedFiles.filter((file) => {
       const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -198,47 +192,26 @@ const FileUploader = () => {
         📤 File Uploader
       </Typography>
 
-      <Box
-        display="flex"
-        flexDirection={{ xs: "column", sm: "row" }}
-        alignItems={{ xs: "stretch", sm: "center" }}
-        gap={2}
-        mb={4}
-      >
+      <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} alignItems="center" mb={4}>
         <Input
           type="file"
           onChange={(e) => setFile(e.target.files[0])}
-          inputRef={fileInputRef} // <-- Here
-          sx={{
-            flex: 1,
-            border: "1px solid #ccc",
-            px: 1,
-            py: 0.5,
-            borderRadius: 1,
-            backgroundColor: "#fff",
-            width: { xs: "100%", sm: "auto" },
-          }}
+          inputRef={fileInputRef}
+          sx={{ flex: 1, border: "1px solid #ccc", px: 1, py: 0.5, borderRadius: 1, backgroundColor: "#fff" }}
         />
         <Button
           variant="contained"
           onClick={handleUpload}
           disabled={!file || uploading}
           size="large"
-          sx={{ px: 4, width: { xs: "100%", sm: "auto" } }}
+          sx={{ px: 4 }}
         >
           {uploading ? <CircularProgress size={24} color="inherit" /> : "Upload"}
         </Button>
       </Box>
 
-      {/* Search & Filter */}
-      <Box
-        mb={2}
-        display="flex"
-        flexDirection={{ xs: "column", sm: "row" }}
-        gap={2}
-        justifyContent="space-between"
-        alignItems="center"
-      >
+      {/* Filters */}
+      <Box mb={2} display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2}>
         <TextField
           label="Search by file name"
           variant="outlined"
@@ -248,13 +221,8 @@ const FileUploader = () => {
           sx={{ flex: 1 }}
         />
         <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel id="file-type-filter-label">Filter by type</InputLabel>
-          <Select
-            labelId="file-type-filter-label"
-            label="Filter by type"
-            value={fileTypeFilter}
-            onChange={(e) => setFileTypeFilter(e.target.value)}
-          >
+          <InputLabel>Filter by type</InputLabel>
+          <Select value={fileTypeFilter} onChange={(e) => setFileTypeFilter(e.target.value)} label="Filter by type">
             {fileTypes.map((type) => (
               <MenuItem key={type} value={type}>
                 {type === "all" ? "All Types" : type}
@@ -264,13 +232,14 @@ const FileUploader = () => {
         </FormControl>
       </Box>
 
+      {/* Table */}
       {loading ? (
         <Box textAlign="center" mt={6}>
           <CircularProgress />
         </Box>
       ) : filteredFiles.length > 0 ? (
         <TableContainer component={Paper} elevation={3} sx={{ overflowX: "auto", borderRadius: 2 }}>
-          <Table size="small" sx={{ minWidth: 650 }}>
+          <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: "#000" }}>
                 <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Name</TableCell>
@@ -293,35 +262,22 @@ const FileUploader = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                         color="info"
-                        disabled={renaming || deleting}
                       >
                         <Visibility />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Download">
-                      <IconButton
-                        onClick={() => handleDownload(file.url, file.name)}
-                        color="success"
-                        disabled={renaming || deleting}
-                      >
+                      <IconButton onClick={() => handleDownload(file.url, file.name)} color="success">
                         <Download />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Rename">
-                      <IconButton
-                        onClick={() => handleRename(file)}
-                        color="warning"
-                        disabled={renaming || deleting}
-                      >
+                      <IconButton onClick={() => handleRename(file)} color="warning">
                         <Edit />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
-                      <IconButton
-                        onClick={() => handleDeleteClick(file)}
-                        color="error"
-                        disabled={renaming || deleting}
-                      >
+                      <IconButton onClick={() => handleDeleteClick(file)} color="error">
                         <Delete />
                       </IconButton>
                     </Tooltip>
@@ -332,76 +288,54 @@ const FileUploader = () => {
           </Table>
         </TableContainer>
       ) : (
-        <Typography variant="body1" color="text.secondary" mt={4} textAlign="center">
+        <Typography mt={4} textAlign="center" color="text.secondary">
           No files match your search/filter criteria.
         </Typography>
       )}
 
       {/* Rename Dialog */}
-      <Dialog
-        open={renameDialogOpen}
-        onClose={() => !renaming && setRenameDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
+      <Dialog open={renameDialogOpen} onClose={() => !renaming && setRenameDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Rename File</DialogTitle>
         <DialogContent>
-          <DialogContentText mb={2}>Enter a new name for the file.</DialogContentText>
+          <DialogContentText>Enter a new name for the file.</DialogContentText>
           <TextField
             fullWidth
-            label="New File Name"
+            margin="dense"
             value={newFileName}
             onChange={(e) => setNewFileName(e.target.value)}
-            margin="dense"
             disabled={renaming}
             autoFocus
           />
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <DialogActions>
           <Button onClick={() => setRenameDialogOpen(false)} disabled={renaming}>
             Cancel
           </Button>
-          <Button
-            variant="contained"
-            onClick={confirmRename}
-            disabled={renaming || !newFileName.trim()}
-            startIcon={renaming ? <CircularProgress size={20} color="inherit" /> : null}
-          >
-            Save
+          <Button variant="contained" onClick={confirmRename} disabled={renaming || !newFileName.trim()}>
+            {renaming ? <CircularProgress size={20} /> : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => !deleting && setDeleteDialogOpen(false)}
-        fullWidth
-        maxWidth="xs"
-      >
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => !deleting && setDeleteDialogOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Are you sure you want to delete <strong>{fileToDelete?.name}</strong>?
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
             Cancel
           </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={confirmDelete}
-            disabled={deleting}
-            startIcon={deleting ? <CircularProgress size={20} color="inherit" /> : null}
-          >
-            Delete
+          <Button variant="contained" color="error" onClick={confirmDelete} disabled={deleting}>
+            {deleting ? <CircularProgress size={20} /> : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar Alert */}
+      {/* Snackbar */}
       <Snackbar
         open={snackOpen}
         autoHideDuration={3000}
@@ -410,8 +344,15 @@ const FileUploader = () => {
       >
         <Alert
           onClose={() => setSnackOpen(false)}
-          severity={snackMsg.startsWith("✅") || snackMsg.startsWith("✏️") ? "success" : "error"}
+          severity={snackSeverity}
           variant="filled"
+          sx={
+            snackColor && {
+              bgcolor: snackColor,
+              color: "#fff",
+              "& .MuiAlert-icon": { color: "#fff" },
+            }
+          }
         >
           {snackMsg}
         </Alert>
