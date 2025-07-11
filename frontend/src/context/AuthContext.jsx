@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import axios from "../api/axios"; // Make sure this has the interceptor
+import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
@@ -7,24 +7,20 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [student, setStudent] = useState(null);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const login = async (email, password) => {
-    try {
-      const res = await axios.post("/auth/login", { email, password });
+    const res = await axios.post("/auth/login", { email, password });
 
-      setUser(res.data.user);
-      setStudent(res.data.student || null);
-      localStorage.setItem("token", res.data.token);
-
-      return res.data.user;
-    } catch (err) {
-      throw new Error("Login failed");
-    }
+    localStorage.setItem("token", res.data.token);
+    setUser(res.data.user);
+    setStudent(res.data.student || null);
+    return res.data.user;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await axios.post("/auth/logout");
     setUser(null);
     setStudent(null);
     localStorage.removeItem("token");
@@ -32,36 +28,40 @@ export const AuthProvider = ({ children }) => {
   };
 
   const refreshStudent = async () => {
-    try {
-      const res = await axios.get("/students/me");
-      setStudent(res.data);
-    } catch (err) {
-      console.error("❌ Failed to refresh student:", err.response?.data || err.message);
-    }
+    const res = await axios.get("/students/me");
+    setStudent(res.data);
   };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      axios
-        .get("/auth/me")
-        .then((res) => {
-          setUser(res.data.user || res.data);
+
+    if (!token) {
+      axios.get("/auth/refresh").then(res => {
+        localStorage.setItem("token", res.data.token);
+        return axios.get("/auth/me");
+      })
+      .then(res => {
+        setUser(res.data.user);
+        return axios.get("/students/me");
+      })
+      .then(res => {
+        setStudent(res.data);
+      })
+      .catch(() => logout())
+      .finally(() => setLoading(false));
+    } else {
+      axios.get("/auth/me")
+        .then(res => {
+          setUser(res.data.user);
           return axios.get("/students/me");
         })
-        .then((res) => {
-          setStudent(res.data);
-        })
-        .catch(() => {
-          logout();
-        })
+        .then(res => setStudent(res.data))
+        .catch(() => logout())
         .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
     }
   }, []);
 
-  if (loading) return <div>Loading...</div>; // ✅ Prevents flicker during session restore
+  if (loading) return <div>Loading...</div>;
 
   return (
     <AuthContext.Provider value={{ user, student, login, logout, refreshStudent }}>

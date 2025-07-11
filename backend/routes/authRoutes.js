@@ -6,13 +6,13 @@ import {
   refresh,
   logout
 } from "../controllers/authController.js";
-import { protect } from "../middleware/auth.js";
+import { verifyToken } from "../middleware/authMiddleware.js"; // ✅ correct file and function name
 
 const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
-router.get("/me", protect, me);
+router.get("/me", verifyToken, me);
 router.get("/refresh", refresh);
 router.post("/logout", logout);
 
