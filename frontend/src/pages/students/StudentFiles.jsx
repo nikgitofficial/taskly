@@ -170,15 +170,26 @@ const FileUploader = () => {
       setFileToDelete(null);
     }
   };
-const handleDownloadById = (id, filename) => {
-  const link = document.createElement("a");
-  link.href = `${import.meta.env.VITE_API_BASE_URL}/blob/download/${id}`;
-  link.target = "_blank";
-  link.download = filename || "downloaded_file";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  showSnack("⬇️ Download started", "info", blue[700]);
+
+const handleDownloadById = async (url, filename) => {
+  try {
+    const response = await fetch(url, { method: "GET" });
+    if (!response.ok) throw new Error("Network response was not ok");
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (error) {
+    console.error("❌ Download failed:", error);
+    showSnack("❌ Failed to download file", "error");
+  }
 };
 
 
@@ -263,11 +274,11 @@ const handleDownloadById = (id, filename) => {
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Download">
-                    <IconButton onClick={() => handleDownloadById(file.url, file.originalname)} color="success">
-                            <Download />
-                     </IconButton>
+  <IconButton onClick={() => handleDownloadById(file.url, file.originalname)} color="success">
+    <Download />
+  </IconButton>
+</Tooltip>
 
-                    </Tooltip>
                     <Tooltip title="Rename">
                       <IconButton onClick={() => handleRename(file)} color="warning">
                         <Edit />
