@@ -1,3 +1,4 @@
+// context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
@@ -11,8 +12,7 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const login = async (email, password) => {
-    const res = await axios.post("/auth/login", { email, password });
-
+    const res = await axios.post("/auth/login", { email, password }, { withCredentials: true });
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
     setStudent(res.data.student || null);
@@ -20,7 +20,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await axios.post("/auth/logout");
+    try {
+      await axios.post("/auth/logout");
+    } catch (err) {
+      console.warn("Logout request failed, continuing cleanup.");
+    }
     setUser(null);
     setStudent(null);
     localStorage.removeItem("token");
@@ -28,40 +32,54 @@ export const AuthProvider = ({ children }) => {
   };
 
   const refreshStudent = async () => {
-    const res = await axios.get("/students/me");
-    setStudent(res.data);
+    try {
+      const res = await axios.get("/students/me");
+      setStudent(res.data);
+    } catch (err) {
+      console.error("Failed to refresh student:", err);
+    }
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const verifyAndFetch = async () => {
+      try {
+        // 1. Refresh the access token
+        const refreshRes = await axios.get("/auth/refresh");
+        localStorage.setItem("token", refreshRes.data.token);
 
-    if (!token) {
-      axios.get("/auth/refresh").then(res => {
-        localStorage.setItem("token", res.data.token);
-        return axios.get("/auth/me");
-      })
-      .then(res => {
-        setUser(res.data.user);
-        return axios.get("/students/me");
-      })
-      .then(res => {
-        setStudent(res.data);
-      })
-      .catch(() => logout())
-      .finally(() => setLoading(false));
-    } else {
-      axios.get("/auth/me")
-        .then(res => {
-          setUser(res.data.user);
-          return axios.get("/students/me");
-        })
-        .then(res => setStudent(res.data))
-        .catch(() => logout())
-        .finally(() => setLoading(false));
-    }
+        // 2. Get current user
+        const userRes = await axios.get("/auth/me");
+        setUser(userRes.data);
+
+        // 3. If student, fetch profile
+        if (userRes.data.role === "student") {
+          const studentRes = await axios.get("/students/me");
+          setStudent(studentRes.data);
+        }
+      } catch (err) {
+        console.error("❌ Auth error:", err.message || err);
+        await logout();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifyAndFetch();
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div style={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontSize: "1.5rem",
+      }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, student, login, logout, refreshStudent }}>

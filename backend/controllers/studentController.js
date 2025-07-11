@@ -1,14 +1,5 @@
+// controllers/studentController.js
 import Student from "../models/Student.js";
-import cloudinary from "../utils/cloudinary.js";
-import { Readable } from "stream";
-
-// Convert Buffer to Stream
-function bufferToStream(buffer) {
-  const readable = new Readable();
-  readable.push(buffer);
-  readable.push(null);
-  return readable;
-}
 
 // @desc    Get student profile
 // @route   GET /api/students/profile
@@ -17,7 +8,6 @@ export const getStudentProfile = async (req, res) => {
   try {
     const student = await Student.findOne({ user: req.user.id });
     if (!student) {
-      // If student profile doesn't exist, create a blank one
       const newStudent = new Student({ user: req.user.id });
       await newStudent.save();
       return res.json(newStudent);
@@ -35,11 +25,13 @@ export const getStudentProfile = async (req, res) => {
 export const updateStudentProfile = async (req, res) => {
   try {
     const { name, course, yearLevel } = req.body;
+
     const updated = await Student.findOneAndUpdate(
       { user: req.user.id },
       { name, course, yearLevel },
       { new: true, upsert: true }
     );
+
     res.json(updated);
   } catch (err) {
     console.error("Error updating student profile:", err);
@@ -47,40 +39,26 @@ export const updateStudentProfile = async (req, res) => {
   }
 };
 
-// @desc    Upload profile picture to Cloudinary
+// @desc    Save profile picture URL from Vercel Blob to DB
 // @route   POST /api/students/profile-pic
 // @access  Private
-export const uploadProfilePicCloudinary = async (req, res) => {
+export const uploadProfilePic = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded." });
+    const { blobUrl } = req.body;
+
+    if (!blobUrl) {
+      return res.status(400).json({ message: "No blob URL provided" });
     }
 
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: "student_profiles",
-        public_id: `user_${req.user.id}`,
-        overwrite: true,
-      },
-      async (error, result) => {
-        if (error) {
-          console.error("Cloudinary error:", error);
-          return res.status(500).json({ message: "Upload failed", error });
-        }
-
-        const updated = await Student.findOneAndUpdate(
-          { user: req.user.id },
-          { profilePic: result.secure_url },
-          { new: true }
-        );
-
-        res.json(updated);
-      }
+    const updated = await Student.findOneAndUpdate(
+      { user: req.user.id },
+      { profilePic: blobUrl },
+      { new: true }
     );
 
-    bufferToStream(req.file.buffer).pipe(stream);
+    res.json(updated);
   } catch (err) {
-    console.error("Server error during profile pic upload:", err);
-    res.status(500).json({ message: "Server error uploading profile pic" });
+    console.error("Failed to update profile pic:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };

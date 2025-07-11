@@ -1,83 +1,83 @@
+  // controllers/studentEntryController.js
 import StudentEntry from "../models/StudentEntry.js";
 
-// ✅ CREATE ENTRY
+// @desc    Create a new entry
+// @route   POST /api/entries
+// @access  Private
 export const createEntry = async (req, res) => {
   try {
     const { title, description, category, date } = req.body;
 
-    const newEntry = new StudentEntry({
+    const entry = new StudentEntry({
       userId: req.user.id,
       title,
       description,
       category,
       date,
-      done: false,
     });
 
-    await newEntry.save();
-    res.status(201).json(newEntry);
-  } catch (error) {
-    console.error("❌ Error creating entry:", error);
-    res.status(500).json({
-      message: "Server error while creating entry",
-      error: error.message,
-    });
+    const saved = await entry.save();
+    res.status(201).json(saved);
+  } catch (err) {
+    console.error("Error creating entry:", err);
+    res.status(500).json({ message: "Failed to create entry" });
   }
 };
 
-// ✅ GET ENTRIES
+// @desc    Get all entries for the logged-in user
+// @route   GET /api/entries
+// @access  Private
 export const getEntries = async (req, res) => {
   try {
-    const entries = await StudentEntry.find({ userId: req.user.id }).sort({ date: 1 });
+    const entries = await StudentEntry.find({ userId: req.user.id }).sort({
+      createdAt: -1,
+    });
     res.json(entries);
-  } catch (error) {
-    console.error("❌ Error fetching entries:", error);
-    res.status(500).json({ message: "Server error while fetching entries" });
+  } catch (err) {
+    console.error("Error fetching entries:", err);
+    res.status(500).json({ message: "Failed to fetch entries" });
   }
 };
 
-// ✅ UPDATE ENTRY
+// @desc    Update an entry
+// @route   PUT /api/entries/:id
+// @access  Private
 export const updateEntry = async (req, res) => {
   try {
-    const entry = await StudentEntry.findById(req.params.id);
-    if (!entry) return res.status(404).json({ message: "Entry not found" });
-    if (entry.userId.toString() !== req.user.id)
-      return res.status(403).json({ message: "Unauthorized" });
+    const updated = await StudentEntry.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.id },
+      req.body,
+      { new: true }
+    );
 
-    const { title, description, category, date, done } = req.body;
+    if (!updated) {
+      return res.status(404).json({ message: "Entry not found" });
+    }
 
-    if (title !== undefined) entry.title = title;
-    if (description !== undefined) entry.description = description;
-    if (category !== undefined) entry.category = category;
-    if (date !== undefined) entry.date = date;
-    if (done !== undefined) entry.done = done;
-
-    await entry.save();
-    res.json(entry);
-  } catch (error) {
-    console.error("❌ Error updating entry:", error);
-    res.status(500).json({
-      message: "Server error while updating entry",
-      error: error.message,
-    });
+    res.json(updated);
+  } catch (err) {
+    console.error("Error updating entry:", err);
+    res.status(500).json({ message: "Failed to update entry" });
   }
 };
 
-// ✅ DELETE ENTRY
+// @desc    Delete an entry
+// @route   DELETE /api/entries/:id
+// @access  Private
 export const deleteEntry = async (req, res) => {
   try {
-    const entry = await StudentEntry.findById(req.params.id);
-    if (!entry) return res.status(404).json({ message: "Entry not found" });
-    if (entry.userId.toString() !== req.user.id)
-      return res.status(403).json({ message: "Unauthorized" });
-
-    await entry.deleteOne();
-    res.json({ message: "Entry deleted successfully" });
-  } catch (error) {
-    console.error("❌ Error deleting entry:", error);
-    res.status(500).json({
-      message: "Server error while deleting entry",
-      error: error.message,
+    const deleted = await StudentEntry.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.id,
     });
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Entry not found" });
+    }
+
+    res.json({ message: "Entry deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting entry:", err);
+    res.status(500).json({ message: "Failed to delete entry" });
   }
 };

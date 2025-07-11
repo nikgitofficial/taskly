@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 
 export const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Unauthorized: No token provided" });
   }
@@ -12,13 +11,8 @@ export const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // ✅ Set user object with consistent id
-    req.user = { id: decoded.id  };
-
-    // ✅ Optional: for debugging
+    req.user = { id: decoded.id };
     console.log("✅ Verified user ID:", req.user.id);
-
     next();
   } catch (err) {
     console.error("❌ JWT Verification Failed:", err.message);

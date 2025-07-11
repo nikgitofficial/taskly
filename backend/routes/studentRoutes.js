@@ -1,21 +1,19 @@
 // routes/studentRoutes.js
-import express from "express"; // ✅ Needed to use express.Router()
-import multer from "multer";   // ✅ Needed for file upload
-
-import { verifyToken } from "../middleware/authMiddleware.js";
+import express from "express";
+import { verifyToken } from "../middleware/verifyToken.js";
 import {
   getStudentProfile,
   updateStudentProfile,
-  uploadProfilePicCloudinary,
+  uploadProfilePic,
 } from "../controllers/studentController.js";
 
 const router = express.Router();
 
-// Use memory storage to upload to Cloudinary
-const upload = multer({ storage: multer.memoryStorage() });
-
+// Profile routes
 router.get("/profile", verifyToken, getStudentProfile);
 router.put("/profile", verifyToken, updateStudentProfile);
-router.post("/profile-pic", verifyToken, upload.single("file"), uploadProfilePicCloudinary);
+
+// Receive Vercel Blob URL and save to DB
+router.post("/profile-pic", verifyToken, uploadProfilePic);
 
 export default router;

@@ -1,3 +1,4 @@
+// FileUploader.jsx
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import axios from "axios";
 import {
@@ -32,8 +33,16 @@ import {
 import { Delete, Edit, Visibility, Download } from "@mui/icons-material";
 import { blue, green, red } from "@mui/material/colors";
 
-// Get base URL from env or default localhost
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+};
 
 const FileUploader = () => {
   const [file, setFile] = useState(null);
@@ -60,12 +69,19 @@ const FileUploader = () => {
 
   const fileInputRef = useRef(null);
 
-  const showSnack = (msg, severity = "success", color = undefined) => {
-    setSnackMsg(msg);
-    setSnackSeverity(severity);
-    setSnackColor(color);
-    setSnackOpen(true);
+const showSnack = (msg, severity = "success", color) => {
+  const defaultColors = {
+    success: green[600],
+    error: red[600],
+    info: blue[600],
+    warning: "#ffa000",
   };
+  setSnackMsg(msg);
+  setSnackSeverity(severity);
+  setSnackColor(color || defaultColors[severity]);
+  setSnackOpen(true);
+};
+
 
   useEffect(() => {
     fetchFiles();
@@ -74,7 +90,7 @@ const FileUploader = () => {
   const fetchFiles = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/blob/files`);
+      const res = await axios.get(`${API_BASE_URL}/api/blob/files`, getAuthHeaders());
       setUploadedFiles(res.data);
     } catch (err) {
       console.error("❌ Failed to load files:", err.message);
@@ -87,12 +103,17 @@ const FileUploader = () => {
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
-
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      await axios.post(`${API_BASE_URL}/api/blob/upload`, formData);
+      await axios.post(`${API_BASE_URL}/api/blob/upload`, formData, {
+        ...getAuthHeaders(),
+        headers: {
+          ...getAuthHeaders().headers,
+          "Content-Type": "multipart/form-data",
+        },
+      });
       await fetchFiles();
       showSnack("✅ File uploaded successfully", "success", green[600]);
       setFile(null);
@@ -104,35 +125,42 @@ const FileUploader = () => {
       setUploading(false);
     }
   };
+// --- inside FileUploader component ---
 
-  const handleRename = (file) => {
-    setFileToRename(file);
-    setNewFileName(file.name);
-    setRenameDialogOpen(true);
-  };
+const handleRename = (file) => {
+  setFileToRename(file);
+  const safeName = file?.originalname || file?.name || "";
+  setNewFileName(safeName);
+  setRenameDialogOpen(true);
+};
 
-  const confirmRename = async () => {
-    if (!newFileName.trim()) {
-      showSnack("❌ New file name cannot be empty", "error");
-      return;
-    }
-    setRenaming(true);
-    try {
-      await axios.put(`${API_BASE_URL}/api/blob/files/${fileToRename._id}`, {
-        newName: newFileName,
-      });
-      showSnack("✏️ File renamed", "success", green[700]);
-      await fetchFiles();
-      setRenameDialogOpen(false);
-    } catch (err) {
-      console.error("❌ Rename failed:", err.message);
-      showSnack("❌ Rename failed", "error");
-    } finally {
-      setRenaming(false);
-      setFileToRename(null);
-      setNewFileName("");
-    }
-  };
+const confirmRename = async () => {
+  if (!newFileName || !newFileName.trim()) {
+    showSnack("❌ New file name cannot be empty", "error");
+    return;
+  }
+  setRenaming(true);
+  try {
+    await axios.put(
+      `${API_BASE_URL}/api/blob/rename/${fileToRename._id}`,
+      { newName: newFileName },
+      getAuthHeaders()
+    );
+    showSnack("✏️ File renamed", "success", green[700]);
+    await fetchFiles();
+    setRenameDialogOpen(false);
+  } catch (err) {
+    console.error("❌ Rename failed:", err.message);
+    showSnack("❌ Rename failed", "error");
+  } finally {
+    setRenaming(false);
+    setFileToRename(null);
+    setNewFileName("");
+  }
+};
+
+
+
 
   const handleDeleteClick = (file) => {
     setFileToDelete(file);
@@ -142,7 +170,7 @@ const FileUploader = () => {
   const confirmDelete = async () => {
     setDeleting(true);
     try {
-      await axios.delete(`${API_BASE_URL}/api/blob/files/${fileToDelete._id}`);
+      await axios.delete(`${API_BASE_URL}/api/blob/delete/${fileToDelete._id}`, getAuthHeaders()); // ✅ updated route
       showSnack("🗑️ File deleted", "success", red[700]);
       await fetchFiles();
       setDeleteDialogOpen(false);
@@ -155,40 +183,50 @@ const FileUploader = () => {
     }
   };
 
-  const handleDownload = async (url, name) => {
-    try {
-      const response = await axios.get(url, { responseType: "blob" });
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.setAttribute("download", name);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(blobUrl);
-      showSnack("⬇️ File downloaded", "info", blue[600]);
-    } catch (err) {
-      console.error("❌ Download failed:", err.message);
-      showSnack("❌ Download failed", "error");
-    }
-  };
+ const handleDownload = async (url, name) => {
+  try {
+    const response = await axios.get(url, {
+      responseType: "blob",
+    });
+
+    const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    // Use fallback for name here:
+    link.setAttribute("download", name || "downloaded_file");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+
+    showSnack("⬇️ Download started", "info", blue[700]);
+  } catch (err) {
+    console.error("❌ Download failed:", err.message);
+    showSnack("❌ Download failed", "error", red[500]);
+  }
+};
+
+
 
   const fileTypes = useMemo(() => {
     const types = uploadedFiles.map((f) => f.type);
     return ["all", ...Array.from(new Set(types))];
   }, [uploadedFiles]);
 
-  const filteredFiles = useMemo(() => {
-    return uploadedFiles.filter((file) => {
-      const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = fileTypeFilter === "all" || file.type === fileTypeFilter;
-      return matchesSearch && matchesType;
-    });
-  }, [uploadedFiles, searchTerm, fileTypeFilter]);
+// Replace your current useMemo with this:
+const filteredFiles = useMemo(() => {
+  return uploadedFiles.filter((file) => {
+    const name = file?.originalname || file?.name || "";
+    const type = file?.mimetype || file?.type || "";
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = fileTypeFilter === "all" || type === fileTypeFilter;
+    return matchesSearch && matchesType;
+  });
+}, [uploadedFiles, searchTerm, fileTypeFilter]);
 
   return (
-    <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
-      <Typography variant="h4" fontWeight={700} gutterBottom textAlign={{ xs: "center", sm: "left" }}>
+     <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
+            <Typography variant="h4" fontWeight={700} gutterBottom textAlign={{ xs: "center", sm: "left" }}>
         📤 File Uploader
       </Typography>
 
@@ -251,7 +289,11 @@ const FileUploader = () => {
             <TableBody>
               {filteredFiles.map((file, idx) => (
                 <TableRow key={idx} hover>
-                  <TableCell sx={{ wordBreak: "break-word" }}>{file.name}</TableCell>
+                  <TableCell sx={{ wordBreak: "break-word" }}>
+  {file.originalname || file.name || "Unnamed"}
+</TableCell>
+
+
                   <TableCell>{file.type}</TableCell>
                   <TableCell>{(file.size / 1024).toFixed(2)}</TableCell>
                   <TableCell>
@@ -267,9 +309,13 @@ const FileUploader = () => {
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Download">
-                      <IconButton onClick={() => handleDownload(file.url, file.name)} color="success">
-                        <Download />
-                      </IconButton>
+                      <IconButton
+  onClick={() => handleDownload(file.url, file.originalname || file.name)}
+  color="success"
+>
+  <Download />
+</IconButton>
+
                     </Tooltip>
                     <Tooltip title="Rename">
                       <IconButton onClick={() => handleRename(file)} color="warning">
@@ -359,6 +405,9 @@ const FileUploader = () => {
       </Snackbar>
     </Container>
   );
+
+    
+  
 };
 
 export default FileUploader;

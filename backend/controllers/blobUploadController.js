@@ -1,85 +1,84 @@
+// controllers/blobUploadController.js
 import { put, del } from "@vercel/blob";
-import formidable from "formidable";
-import fs from "fs";
-import axios from "axios";
-import dotenv from "dotenv";
-dotenv.config();
+import BlobFile from "../models/BlobFile.js";
 
-// ================== Upload Handler ==================
-export const handleBlobUpload = async (req, res) => {
-  const form = formidable({ multiples: false });
-
-  form.parse(req, async (err, fields, files) => {
-    if (err) return res.status(500).json({ message: "Parse error", err });
-
-    const file = files.file;
-    if (!file) return res.status(400).json({ message: "No file uploaded" });
-
-    try {
-      const stream = fs.createReadStream(file.filepath);
-
-      const blob = await put(file.originalFilename, stream, {
-        access: "public", // or "private"
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
-
-      res.status(200).json({
-        message: "✅ Uploaded to Vercel Blob",
-        url: blob.url,
-        pathname: blob.pathname,
-        name: file.originalFilename,
-        size: file.size,
-        type: file.mimetype,
-      });
-    } catch (uploadErr) {
-      console.error("❌ Upload failed:", uploadErr);
-      res.status(500).json({ message: "Upload failed", error: uploadErr });
-    }
-  });
-};
-
-// ================== Delete Handler ==================
-export const handleBlobDelete = async (req, res) => {
-  const { pathname } = req.params;
-
+export const uploadFile = async (req, res) => {
   try {
-    await del(pathname, {
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const { originalname, mimetype, buffer, size } = req.file;
+
+    const blob = await put(originalname, buffer, {
+      access: "public",
+      contentType: mimetype,
+      addRandomSuffix: true,
     });
 
-    res.status(200).json({ message: "🗑️ File deleted" });
-  } catch (error) {
-    console.error("❌ Delete failed:", error);
-    res.status(500).json({ message: "Delete failed", error });
+    const newFile = new BlobFile({
+      filename: blob.pathname,
+      url: blob.url,
+      userId: req.user.id,
+      originalname,
+      mimetype,
+      size,
+    });
+
+    await newFile.save();
+    res.status(201).json(newFile);
+  } catch (err) {
+    console.error("❌ Blob upload error:", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
-// ================== Rename Handler ==================
-export const handleBlobRename = async (req, res) => {
-  const { oldPathname } = req.params;
-  const { newName } = req.body;
-
+export const getUserFiles = async (req, res) => {
   try {
-    const oldUrl = `https://blob.vercel-storage.com/${oldPathname}`;
-    const response = await axios.get(oldUrl, { responseType: "stream" });
-
-    const blob = await put(newName, response.data, {
-      access: "public",
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
-
-    await del(oldPathname, {
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
-
-    res.status(200).json({
-      message: "✏️ File renamed",
-      url: blob.url,
-      pathname: blob.pathname,
-      name: newName,
-    });
+    const files = await BlobFile.find({ userId: req.user.id });
+    res.json(files);
   } catch (err) {
-    console.error("❌ Rename failed:", err);
-    res.status(500).json({ message: "Rename failed", error: err });
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const downloadFile = async (req, res) => {
+  try {
+    const file = await BlobFile.findById(req.params.id);
+    if (!file || file.userId.toString() !== req.user.id)
+      return res.status(404).json({ message: "File not found" });
+
+    res.redirect(file.url);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const renameFile = async (req, res) => {
+  try {
+    const file = await BlobFile.findById(req.params.id);
+    if (!file || file.userId.toString() !== req.user.id)
+      return res.status(404).json({ message: "File not found" });
+
+    file.originalname = req.body.newName;
+    await file.save();
+    res.json(file);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const deleteFile = async (req, res) => {
+  try { 
+    const file = await BlobFile.findById(req.params.id);
+    if (!file || file.userId.toString() !== req.user.id)
+      return res.status(404).json({ message: "File not found" });
+
+    await del(file.filename);
+    await BlobFile.findByIdAndDelete(file._id);
+    res.json({ message: "File deleted" });
+  } catch (err) {
+    console.error("❌ Delete error:", err);
+    res.status(500).json({ message: err.message });
   }
 };

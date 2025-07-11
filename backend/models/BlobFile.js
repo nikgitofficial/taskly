@@ -1,35 +1,17 @@
+// models/BlobFile.js
 import mongoose from "mongoose";
 
 const blobFileSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-    },
-    type: {
-      type: String,
-      required: true,
-    },
-    size: {
-      type: Number,
-      required: true,
-    },
-    url: {
-      type: String,
-      required: true,
-    },
-    pathname: {      // <--- Add this field
-      type: String,
-      required: true,
-    },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    originalname: String,
+    filename: String,
+    mimetype: String,
+    size: Number,
+    url: String,
   },
-  {
-    timestamps: true, // adds createdAt & updatedAt automatically
-  }
+  { timestamps: true }
 );
 
-export default mongoose.model("BlobFile", blobFileSchema);
+const BlobFile = mongoose.model("BlobFile", blobFileSchema);
+export default BlobFile;
