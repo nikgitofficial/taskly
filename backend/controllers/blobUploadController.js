@@ -48,11 +48,21 @@ export const downloadFile = async (req, res) => {
     if (!file || file.userId.toString() !== req.user.id)
       return res.status(404).json({ message: "File not found" });
 
-    res.redirect(file.url);
+    // Stream the blob file from its public URL
+    const response = await axios.get(file.url, { responseType: "stream" });
+
+    // Set correct headers to force download
+    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(file.originalname)}"`);
+    res.setHeader("Content-Type", file.mimetype);
+
+    // Pipe blob stream to response
+    response.data.pipe(res);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Download stream error:", err.message);
+    res.status(500).json({ message: "Download failed" });
   }
 };
+
 
 export const renameFile = async (req, res) => {
   try {

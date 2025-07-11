@@ -12,22 +12,26 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const login = async (email, password) => {
-    const res = await axios.post("/auth/login", { email, password }, { withCredentials: true });
-    localStorage.setItem("token", res.data.token);
-    setUser(res.data.user);
-    setStudent(res.data.student || null);
-    return res.data.user;
+    try {
+      const res = await axios.post("/auth/login", { email, password });
+      localStorage.setItem("token", res.data.token);
+      setUser(res.data.user);
+      setStudent(res.data.student || null);
+      return res.data.user;
+    } catch (err) {
+      throw err.response?.data?.message || "Login failed";
+    }
   };
 
   const logout = async () => {
     try {
       await axios.post("/auth/logout");
     } catch (err) {
-      console.warn("Logout request failed, continuing cleanup.");
+      console.warn("Logout request failed");
     }
+    localStorage.removeItem("token");
     setUser(null);
     setStudent(null);
-    localStorage.removeItem("token");
     navigate("/login");
   };
 
@@ -43,15 +47,12 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const verifyAndFetch = async () => {
       try {
-        // 1. Refresh the access token
         const refreshRes = await axios.get("/auth/refresh");
         localStorage.setItem("token", refreshRes.data.token);
 
-        // 2. Get current user
         const userRes = await axios.get("/auth/me");
         setUser(userRes.data);
 
-        // 3. If student, fetch profile
         if (userRes.data.role === "student") {
           const studentRes = await axios.get("/students/me");
           setStudent(studentRes.data);
@@ -69,13 +70,7 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <div style={{
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        fontSize: "1.5rem",
-      }}>
+      <div style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>
         Loading...
       </div>
     );

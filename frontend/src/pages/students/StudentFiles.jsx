@@ -1,7 +1,6 @@
 // FileUploader.jsx
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import axios from "../../api/axios"; // ✅ uses baseURL and withCredentials
-
+import axios from "../../api/axios";
 import {
   Box,
   Button,
@@ -126,13 +125,12 @@ const FileUploader = () => {
 
   const handleRename = (file) => {
     setFileToRename(file);
-    const safeName = file?.originalname || file?.name || "";
-    setNewFileName(safeName);
+    setNewFileName(file?.originalname || file?.name || "");
     setRenameDialogOpen(true);
   };
 
   const confirmRename = async () => {
-    if (!newFileName || !newFileName.trim()) {
+    if (!newFileName.trim()) {
       showSnack("❌ New file name cannot be empty", "error");
       return;
     }
@@ -172,28 +170,19 @@ const FileUploader = () => {
       setFileToDelete(null);
     }
   };
+const handleDownloadById = (id, filename) => {
+  const link = document.createElement("a");
+  link.href = `${import.meta.env.VITE_API_BASE_URL}/blob/download/${id}`;
+  link.target = "_blank";
+  link.download = filename || "downloaded_file";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showSnack("⬇️ Download started", "info", blue[700]);
+};
 
-  const handleDownload = async (url, name) => {
-    try {
-      const response = await axios.get(url, {
-        responseType: "blob",
-      });
 
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.setAttribute("download", name || "downloaded_file");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
 
-      showSnack("⬇️ Download started", "info", blue[700]);
-    } catch (err) {
-      console.error("❌ Download failed:", err.message);
-      showSnack("❌ Download failed", "error", red[500]);
-    }
-  };
 
   const fileTypes = useMemo(() => {
     const types = uploadedFiles.map((f) => f.mimetype || f.type || "");
@@ -202,11 +191,10 @@ const FileUploader = () => {
 
   const filteredFiles = useMemo(() => {
     return uploadedFiles.filter((file) => {
-      const name = file?.originalname || file?.name || "";
-      const type = file?.mimetype || file?.type || "";
-      const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = fileTypeFilter === "all" || type === fileTypeFilter;
-      return matchesSearch && matchesType;
+      const name = file?.originalname?.toLowerCase() || "";
+      const type = file?.mimetype || "";
+      return name.includes(searchTerm.toLowerCase()) && 
+             (fileTypeFilter === "all" || type === fileTypeFilter);
     });
   }, [uploadedFiles, searchTerm, fileTypeFilter]);
 
@@ -250,9 +238,7 @@ const FileUploader = () => {
       </Box>
 
       {loading ? (
-        <Box textAlign="center" mt={6}>
-          <CircularProgress />
-        </Box>
+        <Box textAlign="center" mt={6}><CircularProgress /></Box>
       ) : filteredFiles.length > 0 ? (
         <TableContainer component={Paper} elevation={3} sx={{ overflowX: "auto", borderRadius: 2 }}>
           <Table size="small">
@@ -267,10 +253,8 @@ const FileUploader = () => {
             <TableBody>
               {filteredFiles.map((file, idx) => (
                 <TableRow key={idx} hover>
-                  <TableCell sx={{ wordBreak: "break-word" }}>
-                    {file.originalname || file.name || "Unnamed"}
-                  </TableCell>
-                  <TableCell>{file.mimetype || file.type}</TableCell>
+                  <TableCell sx={{ wordBreak: "break-word" }}>{file.originalname}</TableCell>
+                  <TableCell>{file.mimetype}</TableCell>
                   <TableCell>{(file.size / 1024).toFixed(2)}</TableCell>
                   <TableCell>
                     <Tooltip title="View">
@@ -279,9 +263,10 @@ const FileUploader = () => {
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Download">
-                      <IconButton onClick={() => handleDownload(file.url, file.originalname)} color="success">
-                        <Download />
-                      </IconButton>
+                    <IconButton onClick={() => handleDownloadById(file.url, file.originalname)} color="success">
+                            <Download />
+                     </IconButton>
+
                     </Tooltip>
                     <Tooltip title="Rename">
                       <IconButton onClick={() => handleRename(file)} color="warning">
@@ -320,9 +305,7 @@ const FileUploader = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRenameDialogOpen(false)} disabled={renaming}>
-            Cancel
-          </Button>
+          <Button onClick={() => setRenameDialogOpen(false)} disabled={renaming}>Cancel</Button>
           <Button variant="contained" onClick={confirmRename} disabled={renaming || !newFileName.trim()}>
             {renaming ? <CircularProgress size={20} /> : "Save"}
           </Button>
@@ -334,13 +317,11 @@ const FileUploader = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete <strong>{fileToDelete?.name}</strong>?
+            Are you sure you want to delete <strong>{fileToDelete?.originalname}</strong>?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
-            Cancel
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>Cancel</Button>
           <Button variant="contained" color="error" onClick={confirmDelete} disabled={deleting}>
             {deleting ? <CircularProgress size={20} /> : "Delete"}
           </Button>
@@ -357,13 +338,11 @@ const FileUploader = () => {
           onClose={() => setSnackOpen(false)}
           severity={snackSeverity}
           variant="filled"
-          sx={
-            snackColor && {
-              bgcolor: snackColor,
-              color: "#fff",
-              "& .MuiAlert-icon": { color: "#fff" },
-            }
-          }
+          sx={snackColor && {
+            bgcolor: snackColor,
+            color: "#fff",
+            "& .MuiAlert-icon": { color: "#fff" },
+          }}
         >
           {snackMsg}
         </Alert>

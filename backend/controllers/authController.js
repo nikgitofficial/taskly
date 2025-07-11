@@ -66,7 +66,7 @@ export const login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.json({ token: accessToken, user: userInfo, student });
@@ -86,7 +86,7 @@ export const me = async (req, res) => {
   }
 };
 
-// ✅ FIXED refreshToken
+// Refresh token
 export const refreshToken = (req, res) => {
   const token = req.cookies?.refreshToken;
   if (!token) return res.status(401).json({ message: "Unauthorized: No refresh token" });
