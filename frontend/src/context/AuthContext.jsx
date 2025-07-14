@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
+import { CircularProgress } from "@mui/material"; // ✅ Added this import
 
 const AuthContext = createContext();
 
@@ -65,7 +66,18 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <div style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "1rem",
+          fontSize: "1.5rem",
+        }}
+      >
+        <CircularProgress size={60} />
         Loading...
       </div>
     );
