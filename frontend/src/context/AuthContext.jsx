@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
+import { CircularProgress, Box, Typography } from "@mui/material";
 
 const AuthContext = createContext();
 
@@ -12,23 +13,17 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const login = async (email, password) => {
-    try {
-      const res = await axios.post("/auth/login", { email, password });
-      localStorage.setItem("token", res.data.token);
-      setUser(res.data.user);
-      setStudent(res.data.student || null);
-      return res.data.user;
-    } catch (err) {
-      throw err.response?.data?.message || "Login failed";
-    }
+    const res = await axios.post("/auth/login", { email, password });
+    localStorage.setItem("token", res.data.token);
+    setUser(res.data.user);
+    setStudent(res.data.student || null);
+    return res.data.user;
   };
 
   const logout = async () => {
     try {
       await axios.post("/auth/logout");
-    } catch (err) {
-      console.warn("Logout request failed");
-    }
+    } catch {}
     localStorage.removeItem("token");
     setUser(null);
     setStudent(null);
@@ -37,10 +32,11 @@ export const AuthProvider = ({ children }) => {
 
   const refreshStudent = async () => {
     try {
-      const res = await axios.get("/students/me");
+      const res = await axios.get("/students/profile");
       setStudent(res.data);
     } catch (err) {
-      console.error("Failed to refresh student:", err);
+      console.error("❌ Failed to refresh student:", err);
+      setStudent(null);
     }
   };
 
@@ -54,11 +50,12 @@ export const AuthProvider = ({ children }) => {
         setUser(userRes.data);
 
         if (userRes.data.role === "student") {
-          const studentRes = await axios.get("/students/me");
-          setStudent(studentRes.data);
+          await refreshStudent();
+        } else {
+          setStudent(null);
         }
       } catch (err) {
-        console.error("❌ Auth error:", err.message || err);
+        console.error("❌ Auth error:", err);
         await logout();
       } finally {
         setLoading(false);
@@ -70,9 +67,19 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <div style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>
-        Loading...
-      </div>
+      <Box
+        sx={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <CircularProgress size={60} />
+        <Typography variant="h6">Loading ...</Typography>
+      </Box>
     );
   }
 

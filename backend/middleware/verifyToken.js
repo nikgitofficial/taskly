@@ -1,9 +1,8 @@
-// middleware/verifyToken.js
 import jwt from "jsonwebtoken";
 
 export const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Unauthorized: No token provided" });
   }
 
@@ -11,8 +10,8 @@ export const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: decoded.id };
-    console.log("✅ Verified user ID:", req.user.id);
+    req.user = { id: decoded.id || decoded._id };
+    if (!req.user.id) throw new Error("User ID missing in token");
     next();
   } catch (err) {
     console.error("❌ JWT Verification Failed:", err.message);
