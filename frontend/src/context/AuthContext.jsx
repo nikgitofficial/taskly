@@ -1,8 +1,6 @@
-// context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
-import { CircularProgress, Box, Typography } from "@mui/material";
 
 const AuthContext = createContext();
 
@@ -16,7 +14,7 @@ export const AuthProvider = ({ children }) => {
     const res = await axios.post("/auth/login", { email, password });
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
-    setStudent(res.data.student || null);
+    setStudent(res.data.student || null); // ✅ Capture student during login
     return res.data.user;
   };
 
@@ -67,19 +65,9 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 2,
-        }}
-      >
-        <CircularProgress size={60} />
-        <Typography variant="h6">Loading ...</Typography>
-      </Box>
+      <div style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>
+        Loading...
+      </div>
     );
   }
 
