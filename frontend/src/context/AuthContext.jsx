@@ -1,21 +1,27 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
-import { CircularProgress } from "@mui/material"; // ✅ Added this import
+import { CircularProgress } from "@mui/material";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [student, setStudent] = useState(null);
+  const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const navigate = useNavigate();
 
   const login = async (email, password) => {
     const res = await axios.post("/auth/login", { email, password });
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
-    setStudent(res.data.student || null); // ✅ Capture student during login
+
+    // Set profile based on role
+    if (res.data.user.role === "student") setStudent(res.data.student || null);
+    else if (res.data.user.role === "employee") setEmployee(res.data.employee || null);
+
     return res.data.user;
   };
 
@@ -26,18 +32,35 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
     setUser(null);
     setStudent(null);
+    setEmployee(null);
     navigate("/login");
   };
 
-  const refreshStudent = async () => {
+  const refreshStudent = useCallback(async () => {
+    setProfileLoading(true);
     try {
       const res = await axios.get("/students/profile");
       setStudent(res.data);
     } catch (err) {
       console.error("❌ Failed to refresh student:", err);
       setStudent(null);
+    } finally {
+      setProfileLoading(false);
     }
-  };
+  }, []);
+
+  const refreshEmployee = useCallback(async () => {
+    setProfileLoading(true);
+    try {
+      const res = await axios.get("/employees/me");
+      setEmployee(res.data);
+    } catch (err) {
+      console.error("❌ Failed to refresh employee:", err);
+      setEmployee(null);
+    } finally {
+      setProfileLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const verifyAndFetch = async () => {
@@ -48,10 +71,14 @@ export const AuthProvider = ({ children }) => {
         const userRes = await axios.get("/auth/me");
         setUser(userRes.data);
 
+        // Load profile according to role
         if (userRes.data.role === "student") {
           await refreshStudent();
+        } else if (userRes.data.role === "employee") {
+          await refreshEmployee();
         } else {
           setStudent(null);
+          setEmployee(null);
         }
       } catch (err) {
         console.error("❌ Auth error:", err);
@@ -62,7 +89,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     verifyAndFetch();
-  }, []);
+  }, [refreshStudent, refreshEmployee]);
 
   if (loading) {
     return (
@@ -84,7 +111,18 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, student, login, logout, refreshStudent }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        student,
+        employee,
+        loading: profileLoading,
+        login,
+        logout,
+        refreshStudent,
+        refreshEmployee,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

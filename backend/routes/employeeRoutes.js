@@ -38,6 +38,7 @@ router.get("/me", verifyToken, async (req, res) => {
       name: employee.name,
       department: employee.department,
       position: employee.position,
+      profilePic: employee.profilePic || "",  // Added profilePic here
       email: employee.userId?.email,
       createdAt: employee.createdAt,
       updatedAt: employee.updatedAt,
@@ -45,6 +46,33 @@ router.get("/me", verifyToken, async (req, res) => {
   } catch (err) {
     console.error("❌ Failed to fetch employee profile:", err.message);
     res.status(500).json({ message: "Failed to fetch employee profile" });
+  }
+});
+
+// ✅ PUT update my employee profile (protected)
+router.put("/me", verifyToken, async (req, res) => {
+  try {
+    const { name, department, position, profilePic } = req.body;
+
+    if (!name || !department || !position) {
+      return res.status(400).json({ message: "Name, department, and position are required." });
+    }
+
+    const updatedEmployee = await Employee.findOneAndUpdate(
+      { userId: req.user.id },
+      {
+        name,
+        department,
+        position,
+        ...(profilePic && { profilePic }), // Update profilePic if provided
+      },
+      { new: true, upsert: true }
+    );
+
+    res.json(updatedEmployee);
+  } catch (err) {
+    console.error("❌ Failed to update employee profile:", err.message);
+    res.status(500).json({ message: "Failed to update employee profile" });
   }
 });
 
