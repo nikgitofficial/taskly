@@ -1,4 +1,3 @@
-/ server.js/
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -11,6 +10,7 @@ import authRoutes from "./routes/authRoutes.js";
 import studentEntryRoutes from "./routes/studentEntryRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import blobUploadRoutes from "./routes/blobUploadRoute.js";
+import employeeRoutes from "./routes/employeeRoutes.js";
 
 // Load env vars
 dotenv.config();
@@ -48,6 +48,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/student-entries", studentEntryRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/blob", blobUploadRoutes);
+app.use("/api/employees", employeeRoutes);
 
 app.get("/", (req, res) => {
   res.send("🚀 Taskly backend is running!");

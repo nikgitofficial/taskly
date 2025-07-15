@@ -12,11 +12,14 @@ import NotAuthorized from "./pages/NotAuthorized";
 
 import PrivateRoute from "./components/PrivateRoute";
 import StudentRoute from "./components/routes/StudentRoute";
+import EmployeeRoute from "./components/routes/EmployeeRoute"; // ✅ added employee route
 
 import StudentHome from "./pages/students/StudentHome";
 import StudentDashboard from "./pages/students/StudentDashboard";
 import StudentProfile from "./pages/students/StudentProfile";
-import StudentFiles from "./pages/students/StudentFiles"; // ✅ Import Files Page
+import StudentFiles from "./pages/students/StudentFiles";
+
+import EmployeeHome from "./pages/employee/EmployeeHome"; // ✅ add employee page
 
 const App = () => {
   return (
@@ -29,13 +32,7 @@ const App = () => {
     >
       <Navbar />
 
-      <Box
-        component="main"
-        flexGrow={1}
-        mt="64px"
-        mb="60px"
-        px={2}
-      >
+      <Box component="main" flexGrow={1} mt="64px" mb="60px" px={2}>
         <Routes>
           <Route
             path="/"
@@ -45,6 +42,8 @@ const App = () => {
               </PrivateRoute>
             }
           />
+
+          {/* ✅ Student Routes */}
           <Route
             path="/student-home"
             element={
@@ -75,6 +74,16 @@ const App = () => {
               <StudentRoute>
                 <StudentFiles />
               </StudentRoute>
+            }
+          />
+
+          {/* ✅ Employee Routes */}
+          <Route
+            path="/employee"
+            element={
+              <EmployeeRoute>
+                <EmployeeHome />
+              </EmployeeRoute>
             }
           />
 

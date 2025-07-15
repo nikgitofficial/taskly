@@ -42,10 +42,12 @@ const Login = () => {
         if (user?.role === "student") navigate("/student-dashboard");
         else if (user?.role === "admin") navigate("/admin-dashboard");
         else if (user?.role === "work") navigate("/work-dashboard");
+        else if (user?.role === "employee") navigate("/employee");
         else navigate("/");
       }, 1000);
     } catch (err) {
-      setError("Invalid email or password.");
+      console.error("Login failed:", err?.response?.data || err.message);
+      setError(err?.response?.data?.message || "Invalid email or password.");
       setLoading(false);
     }
   };
@@ -54,19 +56,19 @@ const Login = () => {
     <>
       {loading ? (
         <Box
-           sx={{
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100vw",
-    height: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff", // optional: white background
-    zIndex: 9999, // ensure it's above everything
-  }}
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#fff",
+            zIndex: 9999,
+          }}
         >
           <Box sx={{ position: "relative", width: 80, height: 80, mb: 2 }}>
             <CircularProgress
@@ -103,15 +105,7 @@ const Login = () => {
             minHeight: "80vh",
           }}
         >
-          <Paper
-            elevation={4}
-            sx={{
-              p: 4,
-              borderRadius: 3,
-              width: "100%",
-              maxWidth: 420,
-            }}
-          >
+          <Paper elevation={4} sx={{ p: 4, borderRadius: 3, width: "100%", maxWidth: 420 }}>
             <Typography variant="h4" align="center" gutterBottom>
               Login
             </Typography>
@@ -140,10 +134,7 @@ const Login = () => {
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((show) => !show)}
-                        edge="end"
-                      >
+                      <IconButton onClick={() => setShowPassword((show) => !show)} edge="end">
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -152,12 +143,7 @@ const Login = () => {
               />
 
               {error && (
-                <Typography
-                  color="error"
-                  variant="body2"
-                  align="center"
-                  mt={1}
-                >
+                <Typography color="error" variant="body2" align="center" mt={1}>
                   {error}
                 </Typography>
               )}
@@ -175,10 +161,7 @@ const Login = () => {
 
             <Typography align="center" sx={{ mt: 2 }}>
               Don't have an account?{" "}
-              <Link
-                to="/register"
-                style={{ color: "#1976d2", textDecoration: "none" }}
-              >
+              <Link to="/register" style={{ color: "#1976d2", textDecoration: "none" }}>
                 Register
               </Link>
             </Typography>
