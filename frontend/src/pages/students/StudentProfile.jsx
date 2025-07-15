@@ -4,6 +4,8 @@ import {
   Container, Typography, Card, CardContent, Box, Stack,
   Button, CircularProgress, TextField, Avatar, IconButton
 } from "@mui/material";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import axios from "../../api/axios";
 
@@ -13,6 +15,17 @@ const StudentProfile = () => {
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [snackMsg, setSnackMsg] = useState("");
+  const [snackSeverity, setSnackSeverity] = useState("success");
+
+  const showSnack = (message, severity = "success") => {
+  setSnackMsg(message);
+  setSnackSeverity(severity);
+  setSnackOpen(true);
+};
+
+
 
   useEffect(() => {
     if (student) {
@@ -25,49 +38,61 @@ const StudentProfile = () => {
     }
   }, [student]);
 
-  const handleProfilePicUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    setUploading(true);
-    try {
-      // ✅ Upload to Vercel Blob
-      const blobRes = await fetch("https://blob.vercel-storage.com/api/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_BLOB_READ_WRITE_TOKEN}`,
-        },
-        body: file,
-      });
+const handleProfilePicUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-      if (!blobRes.ok) throw new Error("Blob upload failed");
-      const { url } = await blobRes.json();
+  setUploading(true);
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
 
-      // ✅ Save profilePic to backend
-      await axios.put("/students/profile", { ...profile, profilePic: url });
+    const token = localStorage.getItem("token");
 
-      await refreshStudent();
-    } catch (err) {
-      console.error("❌ Upload failed:", err);
-      alert("Image upload failed.");
-    } finally {
-      setUploading(false);
-    }
-  };
+    const res = await axios.post("/blob/upload", formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
-  const handleSaveProfile = async () => {
-    setSaving(true);
-    try {
-      await axios.put("/students/profile", profile);
-      await refreshStudent();
-      setEditMode(false);
-    } catch (err) {
-      console.error("❌ Profile update failed:", err);
-      alert("Profile update failed.");
-    } finally {
-      setSaving(false);
-    }
-  };
+    const imageUrl = res.data.url;
+    setProfile(prev => ({ ...prev, profilePic: imageUrl }));
+
+    await axios.put("/students/profile", { ...profile, profilePic: imageUrl }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    await refreshStudent();
+    showSnack("✅ Profile picture updated!", "success");
+  } catch (err) {
+    console.error("❌ Upload failed:", err);
+    showSnack("❌ Image upload failed.", "error");
+  } finally {
+    setUploading(false);
+  }
+};
+
+  // ✅ Profile Info Save Snackbar Added
+const handleSaveProfile = async () => {
+  setSaving(true);
+  try {
+    const token = localStorage.getItem("token");
+    await axios.put("/students/profile", profile, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    await refreshStudent();
+    setEditMode(false);
+    showSnack("✅ Profile information updated!", "success");
+  } catch (err) {
+    console.error("❌ Profile update failed:", err);
+    showSnack("❌ Failed to update profile info.", "error");
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   return (
     <Container sx={{ mt: 8, display: "flex", justifyContent: "center" }}>
@@ -136,8 +161,22 @@ const StudentProfile = () => {
           </Stack>
         </CardContent>
       </Card>
+      <Snackbar
+  open={snackOpen}
+  autoHideDuration={3000}
+  onClose={() => setSnackOpen(false)}
+  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+>
+  <Alert onClose={() => setSnackOpen(false)} severity={snackSeverity} variant="filled">
+    {snackMsg}
+  </Alert>
+</Snackbar>
     </Container>
+    
+    
   );
+  
+
 };
 
 export default StudentProfile;
