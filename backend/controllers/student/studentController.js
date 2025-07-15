@@ -1,12 +1,12 @@
 import Student from "../../models/Student.js";
 
+// ✅ GET Student Profile
 export const getStudentProfile = async (req, res) => {
   try {
-    const student = await Student.findOne({ userId: req.user.id });
+    let student = await Student.findOne({ userId: req.user.id });
     if (!student) {
-      // Auto-create student profile if not found (optional)
-      const newStudent = await Student.create({ userId: req.user.id });
-      return res.json(newStudent);
+      student = await Student.create({ userId: req.user.id });
+      console.log("✅ New student profile created");
     }
     res.json(student);
   } catch (error) {
@@ -15,20 +15,27 @@ export const getStudentProfile = async (req, res) => {
   }
 };
 
+// ✅ UPDATE Student Profile with profilePic support
 export const updateStudentProfile = async (req, res) => {
   try {
-    const { name, course, yearLevel } = req.body;
+    const { name, course, yearLevel, profilePic } = req.body;
+
     if (!name || !course || !yearLevel) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ message: "Name, course, and year level are required." });
     }
 
-    const updated = await Student.findOneAndUpdate(
+    const updatedStudent = await Student.findOneAndUpdate(
       { userId: req.user.id },
-      { name, course, yearLevel },
+      {
+        name,
+        course,
+        yearLevel,
+        ...(profilePic && { profilePic }), // ✅ Only update profilePic if provided
+      },
       { new: true, upsert: true }
     );
 
-    res.json(updated);
+    res.json(updatedStudent);
   } catch (error) {
     console.error("❌ Error updating student profile:", error.message);
     res.status(500).json({ message: "Failed to update profile" });
