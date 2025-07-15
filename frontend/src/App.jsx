@@ -21,6 +21,7 @@ import StudentHome from "./pages/students/StudentHome";
 
 import EmployeeHome from "./pages/employee/EmployeeHome";
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
+import EmployeeCreateEntry from "./pages/employee/EmployeeCreateEntry";
 
 const App = () => {
   return (
@@ -42,6 +43,7 @@ const App = () => {
           {/* ✅ Employee Routes */}
           <Route path="/employee-home" element={<EmployeeRoute><EmployeeHome /></EmployeeRoute>} />
           <Route path="/employee-profile" element={<EmployeeRoute><EmployeeProfile /></EmployeeRoute>} />
+          <Route path="/employee-create-entry" element={<EmployeeRoute><EmployeeCreateEntry /></EmployeeRoute>} />
 
           {/* ✅ Public Routes */}
           <Route path="/login" element={<Login />} />

@@ -19,7 +19,7 @@ import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import axios from "../../api/axios";
 
 const EmployeeProfile = () => {
-  const { employee, user, refreshEmployee } = useAuth(); // Using your auth context for user + refresh
+  const { employee, user, refreshEmployee } = useAuth();
   const [profile, setProfile] = useState({
     name: "",
     department: "",
@@ -39,7 +39,6 @@ const EmployeeProfile = () => {
     setSnackOpen(true);
   };
 
-  // Sync profile state whenever employee updates in context
   useEffect(() => {
     if (employee) {
       setProfile({
@@ -51,7 +50,6 @@ const EmployeeProfile = () => {
     }
   }, [employee]);
 
-  // Handle profile picture upload
   const handleProfilePicUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -60,7 +58,6 @@ const EmployeeProfile = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-
       const token = localStorage.getItem("token");
 
       const res = await axios.post("/blob/upload", formData, {
@@ -74,7 +71,7 @@ const EmployeeProfile = () => {
       setProfile((prev) => ({ ...prev, profilePic: imageUrl }));
 
       await axios.put(
-        "/employees/profile",
+        "/employees/me",
         { ...profile, profilePic: imageUrl },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -91,12 +88,11 @@ const EmployeeProfile = () => {
     }
   };
 
-  // Handle saving the profile info
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.put("/employees/profile", profile, {
+      await axios.put("/employees/me", profile, {
         headers: { Authorization: `Bearer ${token}` },
       });
       await refreshEmployee();
@@ -111,7 +107,6 @@ const EmployeeProfile = () => {
   };
 
   if (!employee) {
-    // Optionally show a loading or no data message
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
         <CircularProgress />
@@ -148,7 +143,6 @@ const EmployeeProfile = () => {
                 (profile.name?.[0]?.toUpperCase() ||
                   user?.email?.[0]?.toUpperCase())}
             </Avatar>
-
             <IconButton
               component="label"
               sx={{
