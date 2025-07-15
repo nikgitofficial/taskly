@@ -5,7 +5,7 @@ import {
   getEntries,
   updateEntry,
   deleteEntry,
-} from "../controllers/studentEntryController.js";
+} from "../controllers/student/studentEntryController.js";
 
 const router = express.Router();
 

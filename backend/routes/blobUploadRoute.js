@@ -7,7 +7,7 @@ import {
   downloadFile,
   renameFile,
   deleteFile,
-} from "../controllers/blobUploadController.js";
+} from "../controllers/blob_file_controllers/blobUploadController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();

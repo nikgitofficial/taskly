@@ -25,6 +25,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const isStudent = user?.role === "student";
+  const isEmployee = user?.role === "employee";
   const isMobile = useMediaQuery("(max-width:768px)");
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -53,8 +54,13 @@ const Navbar = () => {
           { to: "/student-home", label: "Create Entry" },
           { to: "/student-profile", label: "Profile" },
           { to: "/student-dashboard", label: "Dashboard" },
-          { to: "/student-files", label: "Files" }, // ✅ Added Files tab
-        ]
+          { to: "/student-files", label: "Files" }, 
+        ] 
+          : isEmployee
+    ? [
+        { to: "/employee-home", label: "Dashboard" },
+        { to: "/employee-profile", label: "Profile" },
+      ]
       : []),
   ];
 

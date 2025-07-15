@@ -1,5 +1,5 @@
   // controllers/studentEntryController.js
-import StudentEntry from "../models/StudentEntry.js";
+import StudentEntry from "../../models/StudentEntry.js";
 
 // @desc    Create a new entry
 // @route   POST /api/entries

@@ -1,6 +1,6 @@
 // controllers/blobUploadController.js
 import { put, del } from "@vercel/blob";
-import BlobFile from "../models/BlobFile.js";
+import BlobFile from "../../models/BlobFile.js";
 
 export const uploadFile = async (req, res) => {
   try {

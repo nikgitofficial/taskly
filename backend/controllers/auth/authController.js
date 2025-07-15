@@ -1,8 +1,10 @@
+// backend/controllers/auth/authController.js
+
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import User from "../models/User.js";
-import Student from "../models/Student.js";
-import Employee from "../models/Employee.js";
+import User from "../../models/User.js";
+import Student from "../../models/Student.js";
+import Employee from "../../models/Employee.js";
 
 // Token generators
 const generateAccessToken = (user) =>
@@ -19,10 +21,15 @@ export const register = async (req, res) => {
     return res.status(400).json({ message: "Email, password, and role are required." });
   }
 
+  // Optional: basic email format validation
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(400).json({ message: "Invalid email format." });
+  }
+
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "Email already registered" });
+      return res.status(400).json({ message: "Email already registered." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -44,23 +51,27 @@ export const register = async (req, res) => {
       await Employee.create({ userId: newUser._id, name, department, position });
     }
 
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({ message: "User registered successfully." });
   } catch (err) {
     console.error("❌ Registration error:", err);
-    res.status(500).json({ message: err.message || "Registration failed" });
+    res.status(500).json({ message: err.message || "Registration failed." });
   }
 };
-
 
 // ✅ LOGIN
 export const login = async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required." });
+  }
+
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+    if (!user) return res.status(401).json({ message: "Invalid credentials." });
 
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) return res.status(401).json({ message: "Invalid credentials" });
+    if (!validPassword) return res.status(401).json({ message: "Invalid credentials." });
 
     const userInfo = { id: user._id, email: user.email, role: user.role };
     const accessToken = generateAccessToken(userInfo);
@@ -85,7 +96,7 @@ export const login = async (req, res) => {
     res.json({ token: accessToken, user: userInfo, student, employee });
   } catch (err) {
     console.error("❌ Login error:", err);
-    res.status(500).json({ message: "Login failed" });
+    res.status(500).json({ message: "Login failed." });
   }
 };
 
@@ -93,18 +104,18 @@ export const login = async (req, res) => {
 export const me = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found." });
     res.json(user);
   } catch (err) {
     console.error("❌ Me fetch error:", err);
-    res.status(500).json({ message: "Failed to fetch user" });
+    res.status(500).json({ message: "Failed to fetch user." });
   }
 };
 
 // ✅ REFRESH TOKEN
 export const refreshToken = (req, res) => {
   const token = req.cookies?.refreshToken;
-  if (!token) return res.status(401).json({ message: "Unauthorized: No refresh token" });
+  if (!token) return res.status(401).json({ message: "Unauthorized: No refresh token." });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
@@ -113,7 +124,7 @@ export const refreshToken = (req, res) => {
     res.json({ token: newAccessToken });
   } catch (err) {
     console.error("❌ Refresh token error:", err);
-    res.status(403).json({ message: "Forbidden: Invalid refresh token" });
+    res.status(403).json({ message: "Forbidden: Invalid refresh token." });
   }
 };
 
@@ -121,8 +132,8 @@ export const refreshToken = (req, res) => {
 export const logout = (req, res) => {
   res.clearCookie("refreshToken", {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "none",
   });
-  res.json({ message: "Logged out successfully" });
+  res.json({ message: "Logged out successfully." });
 };

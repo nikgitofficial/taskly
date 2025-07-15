@@ -3,7 +3,7 @@ import axios from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { Container, Typography, Paper, Box, CircularProgress } from "@mui/material";
 
-const Employee = () => {
+const EmployeeHome = () => {
   const { user } = useAuth();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,12 +55,18 @@ const Employee = () => {
         <Typography variant="h4" gutterBottom>
           Welcome, {employee.name}
         </Typography>
-        <Typography variant="body1">Email: {user?.email}</Typography>
-        <Typography variant="body1">Department: {employee.department}</Typography>
-        <Typography variant="body1">Position: {employee.position}</Typography>
+        <Typography variant="body1">
+          <strong>Email:</strong> {employee.email}
+        </Typography>
+        <Typography variant="body1">
+          <strong>Department:</strong> {employee.department}
+        </Typography>
+        <Typography variant="body1">
+          <strong>Position:</strong> {employee.position}
+        </Typography>
       </Paper>
     </Container>
   );
 };
 
-export default Employee;
+export default EmployeeHome;
