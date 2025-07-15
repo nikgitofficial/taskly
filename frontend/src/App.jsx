@@ -13,10 +13,11 @@ import PrivateRoute from "./components/PrivateRoute";
 import StudentRoute from "./components/routes/StudentRoute";
 import EmployeeRoute from "./components/routes/EmployeeRoute";
 
-import StudentHome from "./pages/students/StudentHome";
+import StudentEntry from "./pages/students/StudentEntry";
 import StudentDashboard from "./pages/students/StudentDashboard";
 import StudentProfile from "./pages/students/StudentProfile";
 import StudentFiles from "./pages/students/StudentFiles";
+import StudentHome from "./pages/students/StudentHome";
 
 import EmployeeHome from "./pages/employee/EmployeeHome";
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
@@ -33,6 +34,7 @@ const App = () => {
 
           {/* ✅ Student Routes */}
           <Route path="/student-home" element={<StudentRoute><StudentHome /></StudentRoute>} />
+          <Route path="/student-entry" element={<StudentRoute><StudentEntry /></StudentRoute>} />
           <Route path="/student-dashboard" element={<StudentRoute><StudentDashboard /></StudentRoute>} />
           <Route path="/student-profile" element={<StudentRoute><StudentProfile /></StudentRoute>} />
           <Route path="/student-files" element={<StudentRoute><StudentFiles /></StudentRoute>} />

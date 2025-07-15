@@ -48,10 +48,11 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { to: "/", label: "Home" },
+   
     ...(isStudent
       ? [
-          { to: "/student-home", label: "Create Entry" },
+          { to: "/student-home", label: "Home" },
+          { to: "/student-entry", label: "Create Entry" },
           { to: "/student-profile", label: "Profile" },
           { to: "/student-dashboard", label: "Dashboard" },
           { to: "/student-files", label: "Files" }, 
