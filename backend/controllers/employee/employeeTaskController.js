@@ -1,22 +1,42 @@
+import { put } from "@vercel/blob";
 import EmployeeTask from "../../models/EmployeeTask.js";
 
-// ✅ Create Task
+// ✅ Create Task with optional file upload
 export const createTask = async (req, res) => {
   try {
     const { title, description, category, date, status } = req.body;
     const createdBy = req.user.id;
+    let fileUrl = null;
 
-    const newTask = new EmployeeTask({ title, description, category, date, status, createdBy });
+    if (req.file) {
+      const { buffer, originalname, mimetype } = req.file;
+      const blob = await put(originalname, buffer, {
+        access: "public",
+        contentType: mimetype,
+        addRandomSuffix: true,
+      });
+      fileUrl = blob.url;
+    }
+
+    const newTask = new EmployeeTask({
+      title,
+      description,
+      category,
+      date,
+      status,
+      createdBy,
+      fileUrl,
+    });
+
     await newTask.save();
-
     res.status(201).json({ message: "Task created successfully!", task: newTask });
   } catch (err) {
+    console.error("❌ Failed to create task:", err.message);
     res.status(500).json({ message: "Failed to create task", error: err.message });
   }
 };
 
-
-// ✅ Get All Tasks (by employee)
+// ✅ Get All Tasks for logged-in user
 export const getTasks = async (req, res) => {
   try {
     const tasks = await EmployeeTask.find({ createdBy: req.user.id }).sort({ createdAt: -1 });
@@ -26,7 +46,7 @@ export const getTasks = async (req, res) => {
   }
 };
 
-// ✅ Update Task
+// ✅ Update Task (file remains unchanged)
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;

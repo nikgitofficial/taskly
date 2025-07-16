@@ -1,4 +1,4 @@
-// src/pages/employee/EmployeeTaskManager.jsx
+// ✅ /src/pages/employee/EmployeeTaskManager.jsx
 import React, { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import {
@@ -23,7 +23,7 @@ const statuses = ["Pending", "In Progress", "Completed"];
 const EmployeeTaskManager = () => {
   const [entries, setEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
-  const [form, setForm] = useState({ title: "", description: "", category: "", date: "", status: "Pending" });
+  const [form, setForm] = useState({ title: "", description: "", category: "", date: "", status: "Pending", file: null });
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [open, setOpen] = useState(false);
@@ -63,37 +63,62 @@ const EmployeeTaskManager = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    const { name, value, files } = e.target;
+    if (name === "file") {
+      setForm((prev) => ({ ...prev, file: files[0] }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     setSubmitting(true);
+    const token = localStorage.getItem("token");
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    };
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("description", form.description);
+    formData.append("category", form.category);
+    formData.append("date", form.date);
+    formData.append("status", form.status);
+    if (form.file) {
+      formData.append("file", form.file);
+    }
+
     try {
       if (editingId) {
-        await axios.put(`/employee-tasks/${editingId}`, form, config);
+        await axios.put(`/employee-tasks/${editingId}`, formData, config);
         setSnackMsg("Task updated successfully!");
       } else {
-        await axios.post("/employee-tasks", form, config);
+        await axios.post("/employee-tasks", formData, config);
         setSnackMsg("Task created successfully!");
       }
       fetchEntries();
       handleClose();
-      setSnackOpen(true);
     } catch (err) {
       console.error("❌ Failed to submit:", err);
       setSnackMsg("❌ Failed to submit task");
-      setSnackOpen(true);
     } finally {
       setSubmitting(false);
+      setSnackOpen(true);
     }
   };
 
   const handleEdit = (entry) => {
-    setForm({ title: entry.title, description: entry.description, category: entry.category, date: entry.date?.slice(0,10), status: entry.status });
+    setForm({
+      title: entry.title,
+      description: entry.description,
+      category: entry.category,
+      date: entry.date?.slice(0,10),
+      status: entry.status,
+      file: null // ✅ reset file input for new file
+    });
     setEditingId(entry._id);
     setOpen(true);
   };
@@ -131,22 +156,7 @@ const EmployeeTaskManager = () => {
   const handleClose = () => {
     setOpen(false);
     setEditingId(null);
-    setForm({ title: "", description: "", category: "", date: "", status: "Pending" });
-  };
-
-  const handleMarkDoneUndone = async (entry) => {
-    const token = localStorage.getItem("token");
-    const nextStatus = entry.status === "Completed" ? "Pending" : "Completed";
-    try {
-      await axios.put(`/employee-tasks/${entry._id}`, { ...entry, status: nextStatus }, { headers: { Authorization: `Bearer ${token}` } });
-      fetchEntries();
-      setSnackMsg(`Marked as ${nextStatus === "Completed" ? "Done" : "Undone"}`);
-      setSnackOpen(true);
-    } catch (err) {
-      console.error("❌ Failed to update status:", err);
-      setSnackMsg("❌ Failed to update status");
-      setSnackOpen(true);
-    }
+    setForm({ title: "", description: "", category: "", date: "", status: "Pending", file: null });
   };
 
   return (
@@ -163,20 +173,21 @@ const EmployeeTaskManager = () => {
 
       <Button variant="contained" onClick={() => setOpen(true)} sx={{ mb: 2 }}>+ Add Task</Button>
 
+      {/* Table */}
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
             <TableRow>
-              {["Title", "Description", "Category", "Status", "Due Date", "Date Posted", "Actions"].map(head => (
+              {["Title", "Description", "Category", "Status", "Due Date", "Date Posted", "File", "Actions"].map(head => (
                 <TableCell key={head} sx={{ fontWeight: "bold", backgroundColor: "#000", color: "#fff" }}>{head}</TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={7} align="center"><CircularProgress /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} align="center"><CircularProgress /></TableCell></TableRow>
             ) : filteredEntries.length === 0 ? (
-              <TableRow><TableCell colSpan={7} align="center">No entries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} align="center">No entries found</TableCell></TableRow>
             ) : (
               filteredEntries.map(entry => (
                 <TableRow key={entry._id}>
@@ -191,32 +202,18 @@ const EmployeeTaskManager = () => {
                   <TableCell>{entry.date ? new Date(entry.date).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>
-                  <Tooltip title={entry.status === "Completed" ? "Mark as Undone" : "Mark as Done"}>
-  <IconButton onClick={() => handleMarkDoneUndone(entry)}>
-    <CheckCircleIcon
-      sx={{
-        color:
-          entry.status === "Completed"
-            ? "success.main"
-            : entry.status === "Pending"
-            ? "orange"
-            : "text.disabled"
-      }}
-    />
-  </IconButton>
-</Tooltip>
-
-<Tooltip title="Edit">
-  <IconButton onClick={() => handleEdit(entry)} color="primary">
-    <EditIcon />
-  </IconButton>
-</Tooltip>
-<Tooltip title="Delete">
-  <IconButton color="error" onClick={() => { setEntryToDelete(entry); setDeleteDialogOpen(true); }}>
-    <DeleteIcon />
-  </IconButton>
-</Tooltip>
-
+                    {entry.fileUrl ? (
+                      <a href={entry.fileUrl} target="_blank" rel="noopener noreferrer">📎 View File</a>
+                    ) : "No File"}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title="Toggle Done">
+                      <IconButton onClick={() => handleToggleStatus(entry)}>
+                        <CheckCircleIcon sx={{ color: entry.status === "Completed" ? "success.main" : entry.status === "Pending" ? "orange" : "text.disabled" }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Edit"><IconButton onClick={() => handleEdit(entry)} color="primary"><EditIcon /></IconButton></Tooltip>
+                    <Tooltip title="Delete"><IconButton color="error" onClick={() => { setEntryToDelete(entry); setDeleteDialogOpen(true); }}><DeleteIcon /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
               ))
@@ -225,8 +222,7 @@ const EmployeeTaskManager = () => {
         </Table>
       </TableContainer>
 
-      {/* Dialogs */}
-      {/* Create/Edit Task */}
+      {/* Create/Edit Dialog */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>{editingId ? "Edit Task" : "Create Task"}</DialogTitle>
         <DialogContent>
@@ -239,10 +235,16 @@ const EmployeeTaskManager = () => {
           <TextField label="Status" name="status" value={form.status} onChange={handleChange} select fullWidth margin="dense" required>
             {statuses.map(status => <MenuItem key={status} value={status}>{status}</MenuItem>)}
           </TextField>
+          <Button variant="outlined" component="label" sx={{ mt: 2 }}>
+            {form.file ? form.file.name : "Upload File (optional)"}
+            <input type="file" name="file" hidden onChange={handleChange} />
+          </Button>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="secondary">Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={submitting}>{submitting ? <CircularProgress size={24} /> : editingId ? "Update" : "Submit"}</Button>
+          <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
+            {submitting ? <CircularProgress size={24} /> : editingId ? "Update" : "Submit"}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -254,13 +256,10 @@ const EmployeeTaskManager = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)} variant="outlined" color="inherit" disabled={deleting}>Cancel</Button>
-          <Button onClick={handleDelete} variant="contained" color="error" disabled={deleting} startIcon={deleting && <CircularProgress size={18} color="inherit" />}>
-            {deleting ? "Deleting..." : "Delete"}
-          </Button>
+          <Button onClick={handleDelete} variant="contained" color="error" disabled={deleting}>{deleting ? "Deleting..." : "Delete"}</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
       <Snackbar open={snackOpen} autoHideDuration={3000} onClose={() => setSnackOpen(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
         <Alert onClose={() => setSnackOpen(false)} severity={snackMsg.startsWith("❌") ? "error" : "success"}>{snackMsg}</Alert>
       </Snackbar>
