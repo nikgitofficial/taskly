@@ -23,7 +23,8 @@ const statuses = ["Pending", "In Progress", "Completed"];
 const EmployeeTaskManager = () => {
   const [entries, setEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
-  const [form, setForm] = useState({ title: "", description: "", category: "", date: "", status: "Pending" });
+  const [form, setForm] = useState({ title: "", description: "", category: "", date: "", status: "Pending", fileUrl: "" });
+  const [selectedFile, setSelectedFile] = useState(null);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [open, setOpen] = useState(false);
@@ -67,33 +68,78 @@ const EmployeeTaskManager = () => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    setSubmitting(true);
-    try {
-      if (editingId) {
-        await axios.put(`/employee-tasks/${editingId}`, form, config);
-        setSnackMsg("Task updated successfully!");
-      } else {
-        await axios.post("/employee-tasks", form, config);
-        setSnackMsg("Task created successfully!");
+  // Upload file to Vercel Blob and get URL
+ const handleFileUpload = async () => {
+  if (!selectedFile) return null;
+  const token = localStorage.getItem("token");
+  const formData = new FormData();
+  formData.append("file", selectedFile);
+
+  try {
+    const res = await axios.post("/blob/upload", formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data"
       }
-      fetchEntries();
-      handleClose();
-      setSnackOpen(true);
-    } catch (err) {
-      console.error("❌ Failed to submit:", err);
-      setSnackMsg("❌ Failed to submit task");
-      setSnackOpen(true);
-    } finally {
-      setSubmitting(false);
+    });
+    setSnackMsg("✅ File uploaded!");
+    setSnackOpen(true);
+    return res.data.url;  // Make sure you return the file URL from blob upload response
+  } catch (err) {
+    console.error("❌ File upload failed", err);
+    setSnackMsg("❌ File upload failed");
+    setSnackOpen(true);
+    return null;
+  }
+};
+
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  setSubmitting(true);
+  try {
+    let fileUrl = form.fileUrl || null;
+    if (selectedFile) {
+      const uploadedUrl = await handleFileUpload();
+      if (uploadedUrl) fileUrl = uploadedUrl;
     }
-  };
+
+    // Create payload including fileUrl from upload step
+    const payload = { ...form, fileUrl };
+
+    if (editingId) {
+      await axios.put(`/employee-tasks/${editingId}`, payload, config);
+      setSnackMsg("Task updated successfully!");
+    } else {
+      await axios.post("/employee-tasks", payload, config);
+      setSnackMsg("Task created successfully!");
+    }
+
+    await fetchEntries();  // Refresh list after submit
+    handleClose();
+    setSnackOpen(true);
+  } catch (err) {
+    console.error("❌ Failed to submit:", err);
+    setSnackMsg("❌ Failed to submit task");
+    setSnackOpen(true);
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   const handleEdit = (entry) => {
-    setForm({ title: entry.title, description: entry.description, category: entry.category, date: entry.date?.slice(0,10), status: entry.status });
+    setForm({
+      title: entry.title,
+      description: entry.description,
+      category: entry.category,
+      date: entry.date?.slice(0, 10),
+      status: entry.status,
+      fileUrl: entry.fileUrl || ""
+    });
+    setSelectedFile(null);
     setEditingId(entry._id);
     setOpen(true);
   };
@@ -131,7 +177,8 @@ const EmployeeTaskManager = () => {
   const handleClose = () => {
     setOpen(false);
     setEditingId(null);
-    setForm({ title: "", description: "", category: "", date: "", status: "Pending" });
+    setForm({ title: "", description: "", category: "", date: "", status: "Pending", fileUrl: "" });
+    setSelectedFile(null);
   };
 
   const handleMarkDoneUndone = async (entry) => {
@@ -155,7 +202,13 @@ const EmployeeTaskManager = () => {
 
       {/* Search & Filters */}
       <Box display="flex" gap={2} mb={2}>
-        <TextField value={search} onChange={e => setSearch(e.target.value)} placeholder="Search" InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }} size="small" />
+        <TextField
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search"
+          InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }}
+          size="small"
+        />
         <TextField select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} size="small">
           {categories.map(cat => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
         </TextField>
@@ -167,16 +220,16 @@ const EmployeeTaskManager = () => {
         <Table size="small">
           <TableHead>
             <TableRow>
-              {["Title", "Description", "Category", "Status", "Due Date", "Date Posted", "Actions"].map(head => (
+              {["Title", "Description", "Category", "Status", "Due Date", "Date Posted", "File", "Actions"].map(head => (
                 <TableCell key={head} sx={{ fontWeight: "bold", backgroundColor: "#000", color: "#fff" }}>{head}</TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={7} align="center"><CircularProgress /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} align="center"><CircularProgress /></TableCell></TableRow>
             ) : filteredEntries.length === 0 ? (
-              <TableRow><TableCell colSpan={7} align="center">No entries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} align="center">No entries found</TableCell></TableRow>
             ) : (
               filteredEntries.map(entry => (
                 <TableRow key={entry._id}>
@@ -184,20 +237,47 @@ const EmployeeTaskManager = () => {
                   <TableCell>{entry.description.length > 50 ? entry.description.slice(0, 50) + "..." : entry.description}</TableCell>
                   <TableCell>{entry.category}</TableCell>
                   <TableCell>
-                    <Button onClick={() => handleToggleStatus(entry)} size="small" color={entry.status === "Completed" ? "success" : "warning"}>
+                    <Button
+                      onClick={() => handleToggleStatus(entry)}
+                      size="small"
+                      color={entry.status === "Completed" ? "success" : "warning"}
+                    >
                       {entry.status}
                     </Button>
                   </TableCell>
                   <TableCell>{entry.date ? new Date(entry.date).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>
+                    {entry.fileUrl ? (
+                      <a href={entry.fileUrl} target="_blank" rel="noopener noreferrer">View</a>
+                    ) : "No File"}
+                  </TableCell>
+                  <TableCell>
                     <Tooltip title={entry.status === "Completed" ? "Mark as Undone" : "Mark as Done"}>
                       <IconButton onClick={() => handleMarkDoneUndone(entry)}>
-                        <CheckCircleIcon sx={{ color: entry.status === "Completed" ? "green" : "gray" }} />
+                        <CheckCircleIcon
+                          sx={{
+                            color:
+                              entry.status === "Completed"
+                                ? "success.main"
+                                : entry.status === "Pending"
+                                  ? "orange"
+                                  : "text.disabled"
+                          }}
+                        />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Edit"><IconButton onClick={() => handleEdit(entry)}><EditIcon /></IconButton></Tooltip>
-                    <Tooltip title="Delete"><IconButton color="error" onClick={() => { setEntryToDelete(entry); setDeleteDialogOpen(true); }}><DeleteIcon /></IconButton></Tooltip>
+
+                    <Tooltip title="Edit">
+                      <IconButton onClick={() => handleEdit(entry)} color="primary">
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton color="error" onClick={() => { setEntryToDelete(entry); setDeleteDialogOpen(true); }}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))
@@ -220,10 +300,29 @@ const EmployeeTaskManager = () => {
           <TextField label="Status" name="status" value={form.status} onChange={handleChange} select fullWidth margin="dense" required>
             {statuses.map(status => <MenuItem key={status} value={status}>{status}</MenuItem>)}
           </TextField>
+
+          {/* File Upload */}
+          <Button variant="outlined" component="label" fullWidth sx={{ mt: 2 }}>
+            Upload File
+            <input
+              type="file"
+              hidden
+              onChange={(e) => setSelectedFile(e.target.files[0])}
+            />
+          </Button>
+          {selectedFile && <Typography variant="body2" sx={{ mt: 1 }}>Selected: {selectedFile.name}</Typography>}
+          {!selectedFile && form.fileUrl && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Current file: <a href={form.fileUrl} target="_blank" rel="noopener noreferrer">View</a>
+            </Typography>
+          )}
+
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="secondary">Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={submitting}>{submitting ? <CircularProgress size={24} /> : editingId ? "Update" : "Submit"}</Button>
+          <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
+            {submitting ? <CircularProgress size={24} /> : editingId ? "Update" : "Submit"}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -235,15 +334,31 @@ const EmployeeTaskManager = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)} variant="outlined" color="inherit" disabled={deleting}>Cancel</Button>
-          <Button onClick={handleDelete} variant="contained" color="error" disabled={deleting} startIcon={deleting && <CircularProgress size={18} color="inherit" />}>
+          <Button
+            onClick={handleDelete}
+            variant="contained"
+            color="error"
+            disabled={deleting}
+            startIcon={deleting && <CircularProgress size={18} color="inherit" />}
+          >
             {deleting ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Snackbar */}
-      <Snackbar open={snackOpen} autoHideDuration={3000} onClose={() => setSnackOpen(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-        <Alert onClose={() => setSnackOpen(false)} severity={snackMsg.startsWith("❌") ? "error" : "success"}>{snackMsg}</Alert>
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackOpen(false)}
+          severity={snackMsg.startsWith("❌") ? "error" : "success"}
+        >
+          {snackMsg}
+        </Alert>
       </Snackbar>
     </Box>
   );
