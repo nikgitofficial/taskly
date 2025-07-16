@@ -134,6 +134,21 @@ const EmployeeTaskManager = () => {
     setForm({ title: "", description: "", category: "", date: "", status: "Pending" });
   };
 
+  const handleMarkDoneUndone = async (entry) => {
+    const token = localStorage.getItem("token");
+    const nextStatus = entry.status === "Completed" ? "Pending" : "Completed";
+    try {
+      await axios.put(`/employee-tasks/${entry._id}`, { ...entry, status: nextStatus }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchEntries();
+      setSnackMsg(`Marked as ${nextStatus === "Completed" ? "Done" : "Undone"}`);
+      setSnackOpen(true);
+    } catch (err) {
+      console.error("❌ Failed to update status:", err);
+      setSnackMsg("❌ Failed to update status");
+      setSnackOpen(true);
+    }
+  };
+
   return (
     <Box p={3}>
       <Typography variant="h4" gutterBottom>Employee Task Manager</Typography>
@@ -152,26 +167,35 @@ const EmployeeTaskManager = () => {
         <Table size="small">
           <TableHead>
             <TableRow>
-              {["Title", "Category", "Status", "Due Date", "Actions"].map(head => (
+              {["Title", "Description", "Category", "Status", "Due Date", "Date Posted", "Actions"].map(head => (
                 <TableCell key={head} sx={{ fontWeight: "bold", backgroundColor: "#000", color: "#fff" }}>{head}</TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={5} align="center"><CircularProgress /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} align="center"><CircularProgress /></TableCell></TableRow>
             ) : filteredEntries.length === 0 ? (
-              <TableRow><TableCell colSpan={5} align="center">No entries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} align="center">No entries found</TableCell></TableRow>
             ) : (
               filteredEntries.map(entry => (
                 <TableRow key={entry._id}>
                   <TableCell>{entry.title}</TableCell>
+                  <TableCell>{entry.description.length > 50 ? entry.description.slice(0, 50) + "..." : entry.description}</TableCell>
                   <TableCell>{entry.category}</TableCell>
                   <TableCell>
-                    <Button onClick={() => handleToggleStatus(entry)} size="small" color={entry.status === "Completed" ? "success" : "warning"}>{entry.status}</Button>
+                    <Button onClick={() => handleToggleStatus(entry)} size="small" color={entry.status === "Completed" ? "success" : "warning"}>
+                      {entry.status}
+                    </Button>
                   </TableCell>
                   <TableCell>{entry.date ? new Date(entry.date).toLocaleDateString() : "N/A"}</TableCell>
+                  <TableCell>{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>
+                    <Tooltip title={entry.status === "Completed" ? "Mark as Undone" : "Mark as Done"}>
+                      <IconButton onClick={() => handleMarkDoneUndone(entry)}>
+                        <CheckCircleIcon sx={{ color: entry.status === "Completed" ? "green" : "gray" }} />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="Edit"><IconButton onClick={() => handleEdit(entry)}><EditIcon /></IconButton></Tooltip>
                     <Tooltip title="Delete"><IconButton color="error" onClick={() => { setEntryToDelete(entry); setDeleteDialogOpen(true); }}><DeleteIcon /></IconButton></Tooltip>
                   </TableCell>
@@ -182,6 +206,8 @@ const EmployeeTaskManager = () => {
         </Table>
       </TableContainer>
 
+      {/* Dialogs */}
+      {/* Create/Edit Task */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>{editingId ? "Edit Task" : "Create Task"}</DialogTitle>
         <DialogContent>
@@ -201,6 +227,21 @@ const EmployeeTaskManager = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent dividers>
+          <Typography>Are you sure you want to delete <strong>{entryToDelete?.title}</strong>?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} variant="outlined" color="inherit" disabled={deleting}>Cancel</Button>
+          <Button onClick={handleDelete} variant="contained" color="error" disabled={deleting} startIcon={deleting && <CircularProgress size={18} color="inherit" />}>
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar */}
       <Snackbar open={snackOpen} autoHideDuration={3000} onClose={() => setSnackOpen(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
         <Alert onClose={() => setSnackOpen(false)} severity={snackMsg.startsWith("❌") ? "error" : "success"}>{snackMsg}</Alert>
       </Snackbar>
