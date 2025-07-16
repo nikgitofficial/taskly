@@ -1,5 +1,5 @@
 import express from "express";
-import { createTask, getTasks } from "../controllers/employee/employeeTaskController.js";
+import { createTask, getTasks, updateTask, deleteTask } from "../controllers/employee/employeeTaskController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import multer from "multer";
 
@@ -15,5 +15,9 @@ const upload = multer({ storage });
 // Correct routes:
 router.post("/", verifyToken, upload.single("file"), createTask);
 router.get("/", verifyToken, getTasks);
+
+// ✅ Added routes:
+router.put("/:id", verifyToken, updateTask);
+router.delete("/:id", verifyToken, deleteTask);
 
 export default router;
