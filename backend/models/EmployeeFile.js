@@ -7,6 +7,7 @@ const employeeFileSchema = new mongoose.Schema({
   mimetype: String,
   size: Number,
   url: String,
+  fileUrl: String,
 }, { timestamps: true });
 
 export default mongoose.model("EmployeeFile", employeeFileSchema);
