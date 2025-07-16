@@ -4,10 +4,9 @@ import EmployeeTask from "../../models/EmployeeTask.js";
 export const createTask = async (req, res) => {
   try {
     const { title, description, category, date, status } = req.body;
-    const fileUrl = req.file ? req.file.path : null;
     const createdBy = req.user.id;
 
-    const newTask = new EmployeeTask({ title, description, category, date, status, fileUrl, createdBy });
+    const newTask = new EmployeeTask({ title, description, category, date, status, createdBy });
     await newTask.save();
 
     res.status(201).json({ message: "Task created successfully!", task: newTask });
@@ -15,6 +14,7 @@ export const createTask = async (req, res) => {
     res.status(500).json({ message: "Failed to create task", error: err.message });
   }
 };
+
 
 // ✅ Get All Tasks (by employee)
 export const getTasks = async (req, res) => {

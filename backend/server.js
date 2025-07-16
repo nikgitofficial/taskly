@@ -12,7 +12,7 @@ import studentRoutes from "./routes/studentRoutes.js";
 import blobUploadRoutes from "./routes/blobUploadRoute.js";
 import employeeRoutes from "./routes/employeeRoutes.js";
 import employeeTaskRoutes from "./routes/employeeTaskRoutes.js";
-import employeeFileRoute from "./routes/employeeFileRoute.js";
+
 
 // Load env vars
 dotenv.config();
@@ -52,7 +52,6 @@ app.use("/api/students", studentRoutes);
 app.use("/api/blob", blobUploadRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/employee-tasks", employeeTaskRoutes);
-app.use("/api/employee-files", employeeFileRoute);
 
 app.get("/", (req, res) => {
   res.send("🚀 Taskly backend is running!");
