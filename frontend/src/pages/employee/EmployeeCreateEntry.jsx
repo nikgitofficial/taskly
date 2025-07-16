@@ -20,6 +20,12 @@ const Alert = React.forwardRef(function Alert(props, ref) {
 const categories = ["All", "Task", "Project Update", "Meeting", "Training", "Event", "Leave Request", "Incident Report", "Daily Log", "Idea/Suggestion"];
 const statuses = ["Pending", "In Progress", "Completed"];
 
+// Shared auth header helper
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return { headers: { Authorization: `Bearer ${token}` } };
+};
+
 const EmployeeTaskManager = () => {
   const [entries, setEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
@@ -40,18 +46,18 @@ const EmployeeTaskManager = () => {
   useEffect(() => { fetchEntries(); }, []);
   useEffect(() => { filterData(); }, [entries, search, filterCategory]);
 
-  const fetchEntries = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get("/employee-tasks", { headers: { Authorization: `Bearer ${token}` } });
-      setEntries(res.data);
-    } catch (err) {
-      console.error("❌ Failed to fetch entries:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchEntries = async () => {
+  setLoading(true);
+  try {
+    const res = await axios.get("/employee-tasks", getAuthHeaders());
+    setEntries(res.data);
+  } catch (err) {
+    console.error("❌ Failed to fetch entries:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const filterData = () => {
     const lowerSearch = search.toLowerCase();
@@ -68,67 +74,63 @@ const EmployeeTaskManager = () => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // Upload file to Vercel Blob and get URL
- const handleFileUpload = async () => {
-  if (!selectedFile) return null;
-  const token = localStorage.getItem("token");
-  const formData = new FormData();
-  formData.append("file", selectedFile);
+  // Fixed handleFileUpload with shared headers and console log
+  const handleFileUpload = async () => {
+    if (!selectedFile) return null;
+    const formData = new FormData();
+    formData.append("file", selectedFile);
 
-  try {
-    const res = await axios.post("/blob/upload", formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data"
+    try {
+      const res = await axios.post("/employee-files/upload", formData, {
+        ...getAuthHeaders(),
+        headers: {
+          ...getAuthHeaders().headers,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      console.log("File upload response:", res.data); // Debug log
+      setSnackMsg("✅ File uploaded!");
+      setSnackOpen(true);
+      return res.data.url; // Adjust if your API returns file URL here
+    } catch (err) {
+      console.error("❌ File upload failed", err);
+      setSnackMsg("❌ File upload failed");
+      setSnackOpen(true);
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      let fileUrl = form.fileUrl || null;
+      if (selectedFile) {
+        const uploadedUrl = await handleFileUpload();
+        if (uploadedUrl) fileUrl = uploadedUrl;
       }
-    });
-    setSnackMsg("✅ File uploaded!");
-    setSnackOpen(true);
-    return res.data.url;  // Make sure you return the file URL from blob upload response
-  } catch (err) {
-    console.error("❌ File upload failed", err);
-    setSnackMsg("❌ File upload failed");
-    setSnackOpen(true);
-    return null;
-  }
-};
 
+      const payload = { ...form, fileUrl };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  const token = localStorage.getItem("token");
-  const config = { headers: { Authorization: `Bearer ${token}` } };
-  setSubmitting(true);
-  try {
-    let fileUrl = form.fileUrl || null;
-    if (selectedFile) {
-      const uploadedUrl = await handleFileUpload();
-      if (uploadedUrl) fileUrl = uploadedUrl;
+      if (editingId) {
+        await axios.put(`/employee-tasks/${editingId}`, payload, getAuthHeaders());
+        setSnackMsg("Task updated successfully!");
+      } else {
+        await axios.post("/employee-tasks", payload, getAuthHeaders());
+        setSnackMsg("Task created successfully!");
+      }
+
+      await fetchEntries();
+      handleClose();
+      setSnackOpen(true);
+    } catch (err) {
+      console.error("❌ Failed to submit:", err);
+      setSnackMsg("❌ Failed to submit task");
+      setSnackOpen(true);
+    } finally {
+      setSubmitting(false);
     }
-
-    // Create payload including fileUrl from upload step
-    const payload = { ...form, fileUrl };
-
-    if (editingId) {
-      await axios.put(`/employee-tasks/${editingId}`, payload, config);
-      setSnackMsg("Task updated successfully!");
-    } else {
-      await axios.post("/employee-tasks", payload, config);
-      setSnackMsg("Task created successfully!");
-    }
-
-    await fetchEntries();  // Refresh list after submit
-    handleClose();
-    setSnackOpen(true);
-  } catch (err) {
-    console.error("❌ Failed to submit:", err);
-    setSnackMsg("❌ Failed to submit task");
-    setSnackOpen(true);
-  } finally {
-    setSubmitting(false);
-  }
-};
-
+  };
 
   const handleEdit = (entry) => {
     setForm({
@@ -146,11 +148,10 @@ const handleSubmit = async (e) => {
 
   const handleDelete = async () => {
     setDeleting(true);
-    const token = localStorage.getItem("token");
     try {
-      await axios.delete(`/employee-tasks/${entryToDelete._id}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`/employee-tasks/${entryToDelete._id}`, getAuthHeaders());
       setSnackMsg("Task deleted successfully");
-      fetchEntries();
+      await fetchEntries();
     } catch {
       setSnackMsg("❌ Failed to delete");
     } finally {
@@ -162,11 +163,10 @@ const handleSubmit = async (e) => {
   };
 
   const handleToggleStatus = async (entry) => {
-    const token = localStorage.getItem("token");
     const nextStatus = entry.status === "Pending" ? "In Progress" : entry.status === "In Progress" ? "Completed" : "Pending";
     try {
-      await axios.put(`/employee-tasks/${entry._id}`, { ...entry, status: nextStatus }, { headers: { Authorization: `Bearer ${token}` } });
-      fetchEntries();
+      await axios.put(`/employee-tasks/${entry._id}`, { ...entry, status: nextStatus }, getAuthHeaders());
+      await fetchEntries();
       setSnackMsg("Status updated!");
       setSnackOpen(true);
     } catch {
@@ -182,11 +182,10 @@ const handleSubmit = async (e) => {
   };
 
   const handleMarkDoneUndone = async (entry) => {
-    const token = localStorage.getItem("token");
     const nextStatus = entry.status === "Completed" ? "Pending" : "Completed";
     try {
-      await axios.put(`/employee-tasks/${entry._id}`, { ...entry, status: nextStatus }, { headers: { Authorization: `Bearer ${token}` } });
-      fetchEntries();
+      await axios.put(`/employee-tasks/${entry._id}`, { ...entry, status: nextStatus }, getAuthHeaders());
+      await fetchEntries();
       setSnackMsg(`Marked as ${nextStatus === "Completed" ? "Done" : "Undone"}`);
       setSnackOpen(true);
     } catch (err) {
@@ -287,7 +286,6 @@ const handleSubmit = async (e) => {
       </TableContainer>
 
       {/* Dialogs */}
-      {/* Create/Edit Task */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>{editingId ? "Edit Task" : "Create Task"}</DialogTitle>
         <DialogContent>
@@ -301,7 +299,6 @@ const handleSubmit = async (e) => {
             {statuses.map(status => <MenuItem key={status} value={status}>{status}</MenuItem>)}
           </TextField>
 
-          {/* File Upload */}
           <Button variant="outlined" component="label" fullWidth sx={{ mt: 2 }}>
             Upload File
             <input
@@ -316,7 +313,6 @@ const handleSubmit = async (e) => {
               Current file: <a href={form.fileUrl} target="_blank" rel="noopener noreferrer">View</a>
             </Typography>
           )}
-
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="secondary">Cancel</Button>
@@ -326,7 +322,6 @@ const handleSubmit = async (e) => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent dividers>
@@ -339,24 +334,19 @@ const handleSubmit = async (e) => {
             variant="contained"
             color="error"
             disabled={deleting}
-            startIcon={deleting && <CircularProgress size={18} color="inherit" />}
           >
-            {deleting ? "Deleting..." : "Delete"}
+            {deleting ? <CircularProgress size={20} /> : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
       <Snackbar
         open={snackOpen}
-        autoHideDuration={3000}
+        autoHideDuration={4000}
         onClose={() => setSnackOpen(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          onClose={() => setSnackOpen(false)}
-          severity={snackMsg.startsWith("❌") ? "error" : "success"}
-        >
+        <Alert onClose={() => setSnackOpen(false)} severity="success" sx={{ width: "100%" }}>
           {snackMsg}
         </Alert>
       </Snackbar>
