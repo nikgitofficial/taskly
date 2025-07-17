@@ -8,8 +8,10 @@ export const uploadFile = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-
+    
+    const description = req.body?.description || "";
     const { originalname, mimetype, buffer, size } = req.file;
+    
 
     const blob = await put(originalname, buffer, {
       access: "public",
