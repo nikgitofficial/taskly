@@ -22,6 +22,7 @@ import StudentHome from "./pages/students/StudentHome";
 import EmployeeHome from "./pages/employee/EmployeeHome";
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
 import EmployeeCreateEntry from "./pages/employee/EmployeeCreateEntry";
+import EmployeeFile from "./pages/employee/EmployeeFile"
 
 const App = () => {
   return (
@@ -44,6 +45,7 @@ const App = () => {
           <Route path="/employee-home" element={<EmployeeRoute><EmployeeHome /></EmployeeRoute>} />
           <Route path="/employee-profile" element={<EmployeeRoute><EmployeeProfile /></EmployeeRoute>} />
           <Route path="/employee-create-entry" element={<EmployeeRoute><EmployeeCreateEntry /></EmployeeRoute>} />
+          <Route path="/employee-file" element={<EmployeeRoute><EmployeeFile /></EmployeeRoute>} />
 
           {/* ✅ Public Routes */}
           <Route path="/login" element={<Login />} />
