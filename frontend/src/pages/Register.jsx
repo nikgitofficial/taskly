@@ -52,7 +52,7 @@ const Register = () => {
 
     try {
       await axios.post("/auth/register", payload);
-      navigate(role === "student" ? "/student" : "/employee");
+      navigate("/login");
     } catch (err) {
       console.error("Registration Error:", err?.response?.data || err.message);
       setError(err?.response?.data?.message || "Registration failed. Please try again.");

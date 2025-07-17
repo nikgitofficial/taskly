@@ -12,85 +12,17 @@ import EditIcon from "@mui/icons-material/Edit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SearchIcon from "@mui/icons-material/Search";
 
+// 👉 Export dependencies
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
 const categories = ["All", "Task", "Project Update", "Meeting", "Training", "Event", "Leave Request", "Incident Report", "Daily Log", "Idea/Suggestion"];
 const statuses = ["Pending", "In Progress", "Completed"];
-
-// Separate File Upload Dialog Component
-const FileUploadDialog = ({ open, onClose, taskId, onUploadSuccess }) => {
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const handleUpload = async () => {
-    if (!file) return;
-
-    setUploading(true);
-    const token = localStorage.getItem("token");
-    try {
-      // Upload file to employee-files endpoint
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadRes = await axios.post("/employee-files/upload", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      const fileUrl = uploadRes.data.url;
-
-      // Update the task with the new fileUrl
-      await axios.put(
-        `/employee-tasks/${taskId}`,
-        { fileUrl },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      onUploadSuccess();
-      onClose();
-    } catch (err) {
-      console.error("❌ File upload failed:", err);
-      alert("File upload failed. Please try again.");
-    } finally {
-      setUploading(false);
-      setFile(null);
-    }
-  };
-
-  const handleClose = () => {
-    setFile(null);
-    onClose();
-  };
-
-  return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
-      <DialogTitle>Upload File</DialogTitle>
-      <DialogContent>
-        <input type="file" onChange={handleFileChange} />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} color="secondary" disabled={uploading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleUpload}
-          variant="contained"
-          disabled={!file || uploading}
-        >
-          {uploading ? <CircularProgress size={24} /> : "Upload"}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
 
 const EmployeeTaskManager = () => {
   const [entries, setEntries] = useState([]);
@@ -107,10 +39,6 @@ const EmployeeTaskManager = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
-
-  // State for file upload dialog
-  const [fileDialogOpen, setFileDialogOpen] = useState(false);
-  const [fileTaskId, setFileTaskId] = useState(null);
 
   useEffect(() => { fetchEntries(); }, []);
   useEffect(() => { filterData(); }, [entries, search, filterCategory]);
@@ -156,7 +84,6 @@ const EmployeeTaskManager = () => {
         await axios.post("/employee-tasks", payload, { headers: { Authorization: `Bearer ${token}` } });
         setSnackMsg("Task created successfully!");
       }
-
       fetchEntries();
       handleClose();
       setSnackOpen(true);
@@ -217,61 +144,72 @@ const EmployeeTaskManager = () => {
     setForm({ title: "", description: "", category: "", date: "", status: "Pending" });
   };
 
-  const handleMarkDoneUndone = async (entry) => {
-    const token = localStorage.getItem("token");
-    const nextStatus = entry.status === "Completed" ? "Pending" : "Completed";
-    try {
-      await axios.put(`/employee-tasks/${entry._id}`, { ...entry, status: nextStatus }, { headers: { Authorization: `Bearer ${token}` } });
-      fetchEntries();
-      setSnackMsg(`Marked as ${nextStatus === "Completed" ? "Done" : "Undone"}`);
-      setSnackOpen(true);
-    } catch (err) {
-      console.error("❌ Failed to update status:", err);
-      setSnackMsg("❌ Failed to update status");
-      setSnackOpen(true);
-    }
+  // Export to Excel
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredEntries.map(entry => ({
+      Title: entry.title,
+      Description: entry.description,
+      Category: entry.category,
+      Status: entry.status,
+      "Due Date": entry.date ? new Date(entry.date).toLocaleDateString() : "N/A",
+      "Date Posted": entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A"
+    })));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Tasks");
+    XLSX.writeFile(workbook, "Employee_Tasks.xlsx");
   };
 
-  // Open the file upload dialog for a specific task
-  const openFileUploadDialog = (taskId) => {
-    setFileTaskId(taskId);
-    setFileDialogOpen(true);
-  };
-
-  // After file upload success, refresh entries
-  const onFileUploadSuccess = () => {
-    fetchEntries();
-    setSnackMsg("File uploaded and linked successfully!");
-    setSnackOpen(true);
+  // Export to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Employee Task Report", 14, 15);
+    const tableData = filteredEntries.map(entry => [
+      entry.title,
+      entry.description.length > 30 ? entry.description.slice(0, 30) + "..." : entry.description,
+      entry.category,
+      entry.status,
+      entry.date ? new Date(entry.date).toLocaleDateString() : "N/A",
+      entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A"
+    ]);
+    doc.autoTable({
+      head: [["Title", "Description", "Category", "Status", "Due Date", "Date Posted"]],
+      body: tableData,
+      startY: 25,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [0, 0, 0] }
+    });
+    doc.save("Employee_Tasks_Report.pdf");
   };
 
   return (
     <Box p={3}>
       <Typography variant="h4" gutterBottom>Employee Task Manager</Typography>
-
       <Box display="flex" gap={2} mb={2}>
         <TextField value={search} onChange={e => setSearch(e.target.value)} placeholder="Search" InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }} size="small" />
         <TextField select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} size="small">
           {categories.map(cat => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
         </TextField>
       </Box>
-
-      <Button variant="contained" onClick={() => setOpen(true)} sx={{ mb: 2 }}>+ Add Task</Button>
-
+      <Box display="flex" gap={2} mb={2}>
+        <Button variant="contained" onClick={() => setOpen(true)}>+ Add Task</Button>
+        <Button variant="outlined" onClick={exportToExcel}>Export to Excel</Button>
+        <Button variant="outlined" onClick={exportToPDF}>Export to PDF</Button>
+      </Box>
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
             <TableRow>
-              {["Title", "Description", "Category", "Status", "Due Date", "Date Posted", "File", "Actions"].map(head => (
+              {["Title", "Description", "Category", "Status", "Due Date", "Date Posted", "Actions"].map(head => (
                 <TableCell key={head} sx={{ fontWeight: "bold", backgroundColor: "#000", color: "#fff" }}>{head}</TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={8} align="center"><CircularProgress /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} align="center"><CircularProgress /></TableCell></TableRow>
             ) : filteredEntries.length === 0 ? (
-              <TableRow><TableCell colSpan={8} align="center">No entries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} align="center">No entries found</TableCell></TableRow>
             ) : (
               filteredEntries.map(entry => (
                 <TableRow key={entry._id}>
@@ -286,34 +224,8 @@ const EmployeeTaskManager = () => {
                   <TableCell>{entry.date ? new Date(entry.date).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>
-                    {entry.fileUrl ? (
-                      <a href={entry.fileUrl} target="_blank" rel="noopener noreferrer">View File</a>
-                    ) : (
-                      <Button size="small" variant="outlined" onClick={() => openFileUploadDialog(entry._id)}>Add File</Button>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip title={entry.status === "Completed" ? "Mark as Undone" : "Mark as Done"}>
-                      <IconButton onClick={() => handleMarkDoneUndone(entry)}>
-                        <CheckCircleIcon sx={{
-                          color: entry.status === "Completed"
-                            ? "success.main"
-                            : entry.status === "Pending"
-                              ? "orange"
-                              : "text.disabled"
-                        }} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit">
-                      <IconButton onClick={() => handleEdit(entry)} color="primary">
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton color="error" onClick={() => { setEntryToDelete(entry); setDeleteDialogOpen(true); }}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
+                    <Tooltip title="Edit"><IconButton onClick={() => handleEdit(entry)} color="primary"><EditIcon /></IconButton></Tooltip>
+                    <Tooltip title="Delete"><IconButton color="error" onClick={() => { setEntryToDelete(entry); setDeleteDialogOpen(true); }}><DeleteIcon /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
               ))
@@ -322,7 +234,7 @@ const EmployeeTaskManager = () => {
         </Table>
       </TableContainer>
 
-      {/* Task Create/Edit Dialog */}
+      {/* Task Dialog */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>{editingId ? "Edit Task" : "Create Task"}</DialogTitle>
         <DialogContent>
@@ -342,7 +254,7 @@ const EmployeeTaskManager = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent dividers>
@@ -350,19 +262,9 @@ const EmployeeTaskManager = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)} variant="outlined" color="inherit" disabled={deleting}>Cancel</Button>
-          <Button onClick={handleDelete} variant="contained" color="error" disabled={deleting} startIcon={deleting && <CircularProgress size={18} color="inherit" />}>
-            {deleting ? "Deleting..." : "Delete"}
-          </Button>
+          <Button onClick={handleDelete} variant="contained" color="error" disabled={deleting}>{deleting ? "Deleting..." : "Delete"}</Button>
         </DialogActions>
       </Dialog>
-
-      {/* File Upload Dialog */}
-      <FileUploadDialog
-        open={fileDialogOpen}
-        onClose={() => setFileDialogOpen(false)}
-        taskId={fileTaskId}
-        onUploadSuccess={onFileUploadSuccess}
-      />
 
       {/* Snackbar */}
       <Snackbar open={snackOpen} autoHideDuration={3000} onClose={() => setSnackOpen(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
