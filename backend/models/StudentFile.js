@@ -1,7 +1,7 @@
-// models/BlobFile.js
+// models/StudentFile.js
 import mongoose from "mongoose";
 
-const blobFileSchema = new mongoose.Schema(
+const studentFileSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     originalname: String,
@@ -13,5 +13,5 @@ const blobFileSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const BlobFile = mongoose.model("BlobFile", blobFileSchema);
-export default BlobFile;
+const StudentFile = mongoose.model("StudentFile", studentFileSchema);
+export default StudentFile;

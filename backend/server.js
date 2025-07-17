@@ -9,7 +9,7 @@ import helmet from "helmet";
 import authRoutes from "./routes/authRoutes.js";
 import studentEntryRoutes from "./routes/studentEntryRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
-import blobUploadRoutes from "./routes/blobUploadRoute.js";
+import blobUploadRoutes from "./routes/studentFileRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js";
 import employeeTaskRoutes from "./routes/employeeTaskRoutes.js";
 
