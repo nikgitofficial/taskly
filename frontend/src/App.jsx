@@ -23,6 +23,7 @@ import EmployeeHome from "./pages/employee/EmployeeHome";
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
 import EmployeeCreateEntry from "./pages/employee/EmployeeCreateEntry";
 import EmployeeFile from "./pages/employee/EmployeeFile"
+import EmployeeDashboard from "./pages/employee/EmployeeDashboard"
 
 const App = () => {
   return (
@@ -46,6 +47,7 @@ const App = () => {
           <Route path="/employee-profile" element={<EmployeeRoute><EmployeeProfile /></EmployeeRoute>} />
           <Route path="/employee-create-entry" element={<EmployeeRoute><EmployeeCreateEntry /></EmployeeRoute>} />
           <Route path="/employee-file" element={<EmployeeRoute><EmployeeFile /></EmployeeRoute>} />
+          <Route path="/employee-dashboard" element={<EmployeeRoute><EmployeeDashboard /></EmployeeRoute>} />
 
           {/* ✅ Public Routes */}
           <Route path="/login" element={<Login />} />

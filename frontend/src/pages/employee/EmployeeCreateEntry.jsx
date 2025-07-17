@@ -9,13 +9,14 @@ import {
 import MuiAlert from "@mui/material/Alert";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SearchIcon from "@mui/icons-material/Search";
+import DoneIcon from "@mui/icons-material/Done";
+import UndoIcon from "@mui/icons-material/Undo";
 
 // 👉 Export dependencies
 import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable"; // Import for side effect — extends jsPDF prototype
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -164,6 +165,7 @@ const EmployeeTaskManager = () => {
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text("Employee Task Report", 14, 15);
+
     const tableData = filteredEntries.map(entry => [
       entry.title,
       entry.description.length > 30 ? entry.description.slice(0, 30) + "..." : entry.description,
@@ -172,6 +174,7 @@ const EmployeeTaskManager = () => {
       entry.date ? new Date(entry.date).toLocaleDateString() : "N/A",
       entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A"
     ]);
+
     doc.autoTable({
       head: [["Title", "Description", "Category", "Status", "Due Date", "Date Posted"]],
       body: tableData,
@@ -179,6 +182,7 @@ const EmployeeTaskManager = () => {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [0, 0, 0] }
     });
+
     doc.save("Employee_Tasks_Report.pdf");
   };
 
@@ -186,7 +190,13 @@ const EmployeeTaskManager = () => {
     <Box p={3}>
       <Typography variant="h4" gutterBottom>Employee Task Manager</Typography>
       <Box display="flex" gap={2} mb={2}>
-        <TextField value={search} onChange={e => setSearch(e.target.value)} placeholder="Search" InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }} size="small" />
+        <TextField
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search"
+          InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }}
+          size="small"
+        />
         <TextField select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} size="small">
           {categories.map(cat => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
         </TextField>
@@ -217,15 +227,57 @@ const EmployeeTaskManager = () => {
                   <TableCell>{entry.description.length > 50 ? entry.description.slice(0, 50) + "..." : entry.description}</TableCell>
                   <TableCell>{entry.category}</TableCell>
                   <TableCell>
-                    <Button onClick={() => handleToggleStatus(entry)} size="small" color={entry.status === "Completed" ? "success" : "warning"}>
+                    <Button
+                      onClick={() => handleToggleStatus(entry)}
+                      size="small"
+                      color={entry.status === "Completed" ? "success" : "warning"}
+                    >
                       {entry.status}
                     </Button>
                   </TableCell>
                   <TableCell>{entry.date ? new Date(entry.date).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>
-                    <Tooltip title="Edit"><IconButton onClick={() => handleEdit(entry)} color="primary"><EditIcon /></IconButton></Tooltip>
-                    <Tooltip title="Delete"><IconButton color="error" onClick={() => { setEntryToDelete(entry); setDeleteDialogOpen(true); }}><DeleteIcon /></IconButton></Tooltip>
+                    <Tooltip
+                      title={
+                        entry.status === "Completed"
+                          ? "Done"
+                          : entry.status === "Pending"
+                            ? "Undone"
+                            : "In Progress"
+                      }
+                      arrow
+                    >
+                      <IconButton
+                        onClick={() => handleToggleStatus(entry)}
+                        size="small"
+                        color={entry.status === "Completed" ? "success" : "warning"}
+                        aria-label="Toggle Status"
+                      >
+                        {entry.status === "Completed" ? (
+                          <DoneIcon />
+                        ) : (
+                          <UndoIcon />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title="Edit">
+                      <IconButton onClick={() => handleEdit(entry)} color="primary">
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton
+                        color="error"
+                        onClick={() => {
+                          setEntryToDelete(entry);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))
@@ -250,7 +302,9 @@ const EmployeeTaskManager = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="secondary">Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={submitting}>{submitting ? <CircularProgress size={24} /> : editingId ? "Update" : "Submit"}</Button>
+          <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
+            {submitting ? <CircularProgress size={24} /> : editingId ? "Update" : "Submit"}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -262,13 +316,17 @@ const EmployeeTaskManager = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)} variant="outlined" color="inherit" disabled={deleting}>Cancel</Button>
-          <Button onClick={handleDelete} variant="contained" color="error" disabled={deleting}>{deleting ? "Deleting..." : "Delete"}</Button>
+          <Button onClick={handleDelete} variant="contained" color="error" disabled={deleting}>
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Snackbar */}
       <Snackbar open={snackOpen} autoHideDuration={3000} onClose={() => setSnackOpen(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-        <Alert onClose={() => setSnackOpen(false)} severity={snackMsg.startsWith("❌") ? "error" : "success"}>{snackMsg}</Alert>
+        <Alert onClose={() => setSnackOpen(false)} severity={snackMsg.startsWith("❌") ? "error" : "success"}>
+          {snackMsg}
+        </Alert>
       </Snackbar>
     </Box>
   );

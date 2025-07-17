@@ -63,6 +63,8 @@ const Navbar = () => {
         { to: "/employee-profile", label: "Profile" },
         { to: "/employee-create-entry", label: "Create Entry" },
         { to: "/employee-file", label: "Files" },
+        { to: "/employee-dashboard", label: "Dashboard" },
+        
       ]
       : []),
   ];
