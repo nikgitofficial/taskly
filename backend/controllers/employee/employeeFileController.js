@@ -24,6 +24,7 @@ export const uploadFile = async (req, res) => {
       originalname,
       mimetype,
       size,
+      description,
     });
 
     await newFile.save();

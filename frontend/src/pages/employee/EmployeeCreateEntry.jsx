@@ -19,11 +19,83 @@ const Alert = React.forwardRef(function Alert(props, ref) {
 const categories = ["All", "Task", "Project Update", "Meeting", "Training", "Event", "Leave Request", "Incident Report", "Daily Log", "Idea/Suggestion"];
 const statuses = ["Pending", "In Progress", "Completed"];
 
+// Separate File Upload Dialog Component
+const FileUploadDialog = ({ open, onClose, taskId, onUploadSuccess }) => {
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+
+    setUploading(true);
+    const token = localStorage.getItem("token");
+    try {
+      // Upload file to employee-files endpoint
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await axios.post("/employee-files/upload", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const fileUrl = uploadRes.data.url;
+
+      // Update the task with the new fileUrl
+      await axios.put(
+        `/employee-tasks/${taskId}`,
+        { fileUrl },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      onUploadSuccess();
+      onClose();
+    } catch (err) {
+      console.error("❌ File upload failed:", err);
+      alert("File upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+      setFile(null);
+    }
+  };
+
+  const handleClose = () => {
+    setFile(null);
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
+      <DialogTitle>Upload File</DialogTitle>
+      <DialogContent>
+        <input type="file" onChange={handleFileChange} />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} color="secondary" disabled={uploading}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleUpload}
+          variant="contained"
+          disabled={!file || uploading}
+        >
+          {uploading ? <CircularProgress size={24} /> : "Upload"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const EmployeeTaskManager = () => {
   const [entries, setEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
   const [form, setForm] = useState({ title: "", description: "", category: "", date: "", status: "Pending" });
-  const [file, setFile] = useState(null);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [open, setOpen] = useState(false);
@@ -35,6 +107,10 @@ const EmployeeTaskManager = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // State for file upload dialog
+  const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const [fileTaskId, setFileTaskId] = useState(null);
 
   useEffect(() => { fetchEntries(); }, []);
   useEffect(() => { filterData(); }, [entries, search, filterCategory]);
@@ -72,25 +148,7 @@ const EmployeeTaskManager = () => {
     setSubmitting(true);
     const token = localStorage.getItem("token");
     try {
-      let uploadedFileUrl = null;
-
-      if (file) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const uploadRes = await axios.post("/blob/upload", formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data"
-          }
-        });
-
-        uploadedFileUrl = uploadRes.data.url;
-      }
-
       const payload = { ...form };
-      if (uploadedFileUrl) payload.fileUrl = uploadedFileUrl;
-
       if (editingId) {
         await axios.put(`/employee-tasks/${editingId}`, payload, { headers: { Authorization: `Bearer ${token}` } });
         setSnackMsg("Task updated successfully!");
@@ -157,7 +215,6 @@ const EmployeeTaskManager = () => {
     setOpen(false);
     setEditingId(null);
     setForm({ title: "", description: "", category: "", date: "", status: "Pending" });
-    setFile(null);
   };
 
   const handleMarkDoneUndone = async (entry) => {
@@ -173,6 +230,19 @@ const EmployeeTaskManager = () => {
       setSnackMsg("❌ Failed to update status");
       setSnackOpen(true);
     }
+  };
+
+  // Open the file upload dialog for a specific task
+  const openFileUploadDialog = (taskId) => {
+    setFileTaskId(taskId);
+    setFileDialogOpen(true);
+  };
+
+  // After file upload success, refresh entries
+  const onFileUploadSuccess = () => {
+    fetchEntries();
+    setSnackMsg("File uploaded and linked successfully!");
+    setSnackOpen(true);
   };
 
   return (
@@ -218,7 +288,9 @@ const EmployeeTaskManager = () => {
                   <TableCell>
                     {entry.fileUrl ? (
                       <a href={entry.fileUrl} target="_blank" rel="noopener noreferrer">View File</a>
-                    ) : "No File"}
+                    ) : (
+                      <Button size="small" variant="outlined" onClick={() => openFileUploadDialog(entry._id)}>Add File</Button>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Tooltip title={entry.status === "Completed" ? "Mark as Undone" : "Mark as Done"}>
@@ -250,6 +322,7 @@ const EmployeeTaskManager = () => {
         </Table>
       </TableContainer>
 
+      {/* Task Create/Edit Dialog */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>{editingId ? "Edit Task" : "Create Task"}</DialogTitle>
         <DialogContent>
@@ -262,7 +335,6 @@ const EmployeeTaskManager = () => {
           <TextField label="Status" name="status" value={form.status} onChange={handleChange} select fullWidth margin="dense" required>
             {statuses.map(status => <MenuItem key={status} value={status}>{status}</MenuItem>)}
           </TextField>
-          <input type="file" onChange={(e) => setFile(e.target.files[0])} style={{ marginTop: "16px" }} />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="secondary">Cancel</Button>
@@ -270,6 +342,7 @@ const EmployeeTaskManager = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent dividers>
@@ -283,6 +356,15 @@ const EmployeeTaskManager = () => {
         </DialogActions>
       </Dialog>
 
+      {/* File Upload Dialog */}
+      <FileUploadDialog
+        open={fileDialogOpen}
+        onClose={() => setFileDialogOpen(false)}
+        taskId={fileTaskId}
+        onUploadSuccess={onFileUploadSuccess}
+      />
+
+      {/* Snackbar */}
       <Snackbar open={snackOpen} autoHideDuration={3000} onClose={() => setSnackOpen(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
         <Alert onClose={() => setSnackOpen(false)} severity={snackMsg.startsWith("❌") ? "error" : "success"}>{snackMsg}</Alert>
       </Snackbar>

@@ -1,4 +1,3 @@
-// FileUploader.jsx
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import axios from "../../api/axios";
 import {
@@ -44,6 +43,9 @@ const getAuthHeaders = () => {
 
 const FileUploader = () => {
   const [file, setFile] = useState(null);
+  const [description, setDescription] = useState("");
+  const [descDialogOpen, setDescDialogOpen] = useState(false);
+
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -97,11 +99,27 @@ const FileUploader = () => {
     }
   };
 
+  // Open description modal after file selected
+  const onFileSelect = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setDescription("");
+      setDescDialogOpen(true);
+    }
+  };
+
+  // Upload file + description
   const handleUpload = async () => {
     if (!file) return;
+    if (!description.trim()) {
+      showSnack("Please add a description before uploading", "warning");
+      return;
+    }
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("description", description);
 
     try {
       await axios.post("/employee-files/upload", formData, {
@@ -114,6 +132,8 @@ const FileUploader = () => {
       await fetchFiles();
       showSnack("✅ File uploaded successfully", "success", green[600]);
       setFile(null);
+      setDescription("");
+      setDescDialogOpen(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       console.error("❌ Upload failed:", err.message);
@@ -171,29 +191,26 @@ const FileUploader = () => {
     }
   };
 
-const handleDownloadById = async (url, filename) => {
-  try {
-    const response = await fetch(url, { method: "GET" });
-    if (!response.ok) throw new Error("Network response was not ok");
+  const handleDownloadById = async (url, filename) => {
+    try {
+      const response = await fetch(url, { method: "GET" });
+      if (!response.ok) throw new Error("Network response was not ok");
 
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
-    a.href = downloadUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(downloadUrl);
-  } catch (error) {
-    console.error("❌ Download failed:", error);
-    showSnack("❌ Failed to download file", "error");
-  }
-};
-
-
-
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("❌ Download failed:", error);
+      showSnack("❌ Failed to download file", "error");
+    }
+  };
 
   const fileTypes = useMemo(() => {
     const types = uploadedFiles.map((f) => f.mimetype || f.type || "");
@@ -204,8 +221,10 @@ const handleDownloadById = async (url, filename) => {
     return uploadedFiles.filter((file) => {
       const name = file?.originalname?.toLowerCase() || "";
       const type = file?.mimetype || "";
-      return name.includes(searchTerm.toLowerCase()) && 
-             (fileTypeFilter === "all" || type === fileTypeFilter);
+      return (
+        name.includes(searchTerm.toLowerCase()) &&
+        (fileTypeFilter === "all" || type === fileTypeFilter)
+      );
     });
   }, [uploadedFiles, searchTerm, fileTypeFilter]);
 
@@ -218,13 +237,11 @@ const handleDownloadById = async (url, filename) => {
       <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} alignItems="center" mb={4}>
         <Input
           type="file"
-          onChange={(e) => setFile(e.target.files[0])}
+          onChange={onFileSelect}
           inputRef={fileInputRef}
           sx={{ flex: 1, border: "1px solid #ccc", px: 1, py: 0.5, borderRadius: 1, backgroundColor: "#fff" }}
         />
-        <Button variant="contained" onClick={handleUpload} disabled={!file || uploading} size="large" sx={{ px: 4 }}>
-          {uploading ? <CircularProgress size={24} color="inherit" /> : "Upload"}
-        </Button>
+        {/* Upload button removed here since uploading is done in modal */}
       </Box>
 
       <Box mb={2} display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2}>
@@ -249,13 +266,16 @@ const handleDownloadById = async (url, filename) => {
       </Box>
 
       {loading ? (
-        <Box textAlign="center" mt={6}><CircularProgress /></Box>
+        <Box textAlign="center" mt={6}>
+          <CircularProgress />
+        </Box>
       ) : filteredFiles.length > 0 ? (
         <TableContainer component={Paper} elevation={3} sx={{ overflowX: "auto", borderRadius: 2 }}>
           <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: "#000" }}>
                 <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Name</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Description</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Type</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Size (KB)</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Actions</TableCell>
@@ -265,6 +285,7 @@ const handleDownloadById = async (url, filename) => {
               {filteredFiles.map((file, idx) => (
                 <TableRow key={idx} hover>
                   <TableCell sx={{ wordBreak: "break-word" }}>{file.originalname}</TableCell>
+                  <TableCell sx={{ wordBreak: "break-word", maxWidth: 300 }}>{file.description || "-"}</TableCell>
                   <TableCell>{file.mimetype}</TableCell>
                   <TableCell>{(file.size / 1024).toFixed(2)}</TableCell>
                   <TableCell>
@@ -274,11 +295,10 @@ const handleDownloadById = async (url, filename) => {
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Download">
-  <IconButton onClick={() => handleDownloadById(file.url, file.originalname)} color="success">
-    <Download />
-  </IconButton>
-</Tooltip>
-
+                      <IconButton onClick={() => handleDownloadById(file.url, file.originalname)} color="success">
+                        <Download />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="Rename">
                       <IconButton onClick={() => handleRename(file)} color="warning">
                         <Edit />
@@ -301,6 +321,34 @@ const handleDownloadById = async (url, filename) => {
         </Typography>
       )}
 
+      {/* Description Dialog */}
+      <Dialog open={descDialogOpen} onClose={() => !uploading && setDescDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Add Description</DialogTitle>
+        <DialogContent>
+          <Typography mb={2}>
+            File: <strong>{file?.name}</strong>
+          </Typography>
+          <TextField
+            autoFocus
+            label="Description"
+            fullWidth
+            multiline
+            minRows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={uploading}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDescDialogOpen(false)} disabled={uploading}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleUpload} disabled={uploading || !description.trim()}>
+            {uploading ? <CircularProgress size={20} /> : "Upload"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Rename Dialog */}
       <Dialog open={renameDialogOpen} onClose={() => !renaming && setRenameDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Rename File</DialogTitle>
@@ -316,7 +364,9 @@ const handleDownloadById = async (url, filename) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRenameDialogOpen(false)} disabled={renaming}>Cancel</Button>
+          <Button onClick={() => setRenameDialogOpen(false)} disabled={renaming}>
+            Cancel
+          </Button>
           <Button variant="contained" onClick={confirmRename} disabled={renaming || !newFileName.trim()}>
             {renaming ? <CircularProgress size={20} /> : "Save"}
           </Button>
@@ -332,7 +382,9 @@ const handleDownloadById = async (url, filename) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>Cancel</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            Cancel
+          </Button>
           <Button variant="contained" color="error" onClick={confirmDelete} disabled={deleting}>
             {deleting ? <CircularProgress size={20} /> : "Delete"}
           </Button>
@@ -349,11 +401,13 @@ const handleDownloadById = async (url, filename) => {
           onClose={() => setSnackOpen(false)}
           severity={snackSeverity}
           variant="filled"
-          sx={snackColor && {
-            bgcolor: snackColor,
-            color: "#fff",
-            "& .MuiAlert-icon": { color: "#fff" },
-          }}
+          sx={
+            snackColor && {
+              bgcolor: snackColor,
+              color: "#fff",
+              "& .MuiAlert-icon": { color: "#fff" },
+            }
+          }
         >
           {snackMsg}
         </Alert>

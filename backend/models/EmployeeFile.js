@@ -9,6 +9,7 @@ const employeeFileSchema = new mongoose.Schema(
     mimetype: String,
     size: Number,
     url: String,
+    description: { type: String, default: "" },
   },
   { timestamps: true }
 );
