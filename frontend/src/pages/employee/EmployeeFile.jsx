@@ -191,26 +191,30 @@ const FileUploader = () => {
     }
   };
 
-  const handleDownloadById = async (url, filename) => {
-    try {
-      const response = await fetch(url, { method: "GET" });
-      if (!response.ok) throw new Error("Network response was not ok");
+ const handleDownloadById = async (url, filename) => {
+  showSnack(`⬇️ Downloading ${filename}...`, "info", blue[600]);
+  try {
+    const response = await fetch(url, { method: "GET" });
+    if (!response.ok) throw new Error("Network response was not ok");
 
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
 
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (error) {
-      console.error("❌ Download failed:", error);
-      showSnack("❌ Failed to download file", "error");
-    }
-  };
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+
+    showSnack(`✅ Downloaded ${filename}`, "success", green[600]);
+  } catch (error) {
+    console.error("❌ Download failed:", error);
+    showSnack("❌ Failed to download file", "error", red[600]);
+  }
+};
+
 
   const fileTypes = useMemo(() => {
     const types = uploadedFiles.map((f) => f.mimetype || f.type || "");
@@ -270,9 +274,17 @@ const FileUploader = () => {
           <CircularProgress />
         </Box>
       ) : filteredFiles.length > 0 ? (
-        <TableContainer component={Paper} elevation={3} sx={{ overflowX: "auto", borderRadius: 2 }}>
+             <TableContainer
+         component={Paper}
+         elevation={3}
+         sx={{
+           maxHeight: 400,
+           overflow: 'auto',
+           borderRadius: 2,
+         }}
+       >
           <Table size="small">
-            <TableHead>
+         <TableHead sx={{ position: 'sticky', top: 0, backgroundColor: '#000', zIndex: 1 }}>
               <TableRow sx={{ backgroundColor: "#000" }}>
                 <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Name</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Description</TableCell>

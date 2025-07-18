@@ -176,26 +176,30 @@ const FileUploader = () => {
     }
   };
 
-  const handleDownloadById = async (url, filename) => {
-    try {
-      const response = await fetch(url, { method: "GET" });
-      if (!response.ok) throw new Error("Network response was not ok");
+ const handleDownloadById = async (url, filename) => {
+  showSnack(`⬇️ Downloading ${filename}...`, "info", blue[600]);
+  try {
+    const response = await fetch(url, { method: "GET" });
+    if (!response.ok) throw new Error("Network response was not ok");
 
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
 
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (error) {
-      console.error("❌ Download failed:", error);
-      showSnack("❌ Failed to download file", "error");
-    }
-  };
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+
+    showSnack(`✅ Downloaded ${filename}`, "success", green[600]);
+  } catch (error) {
+    console.error("❌ Download failed:", error);
+    showSnack("❌ Failed to download file", "error", red[600]);
+  }
+};
+
 
   const fileTypes = useMemo(() => {
     const types = uploadedFiles.map((f) => f.mimetype || f.type || "");
@@ -253,9 +257,18 @@ const FileUploader = () => {
       {loading ? (
         <Box textAlign="center" mt={6}><CircularProgress /></Box>
       ) : filteredFiles.length > 0 ? (
-        <TableContainer component={Paper} elevation={3} sx={{ overflowX: "auto", borderRadius: 2 }}>
+      <TableContainer
+  component={Paper}
+  elevation={3}
+  sx={{
+    maxHeight: 400,
+    overflow: 'auto',
+    borderRadius: 2,
+  }}
+>
           <Table size="small">
-            <TableHead>
+           <TableHead sx={{ position: 'sticky', top: 0, backgroundColor: '#000', zIndex: 1 }}>
+
               <TableRow sx={{ backgroundColor: "#000" }}>
                 <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Name</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>Description</TableCell>
@@ -328,6 +341,46 @@ const FileUploader = () => {
       </Dialog>
 
       {/* Rename and Delete Dialogs remain unchanged */}
+
+      {/* Rename Dialog */}
+<Dialog open={renameDialogOpen} onClose={() => !renaming && setRenameDialogOpen(false)} fullWidth maxWidth="sm">
+  <DialogTitle>Rename File</DialogTitle>
+  <DialogContent>
+    <TextField
+      autoFocus
+      margin="dense"
+      label="New File Name"
+      type="text"
+      fullWidth
+      value={newFileName}
+      onChange={(e) => setNewFileName(e.target.value)}
+      disabled={renaming}
+    />
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setRenameDialogOpen(false)} disabled={renaming}>Cancel</Button>
+    <Button variant="contained" onClick={confirmRename} disabled={renaming || !newFileName.trim()}>
+      {renaming ? <CircularProgress size={20} /> : "Rename"}
+    </Button>
+  </DialogActions>
+</Dialog>
+
+{/* Delete Confirmation Dialog */}
+<Dialog open={deleteDialogOpen} onClose={() => !deleting && setDeleteDialogOpen(false)} fullWidth maxWidth="sm">
+  <DialogTitle>Delete File</DialogTitle>
+  <DialogContent>
+    <DialogContentText>
+      Are you sure you want to delete <strong>{fileToDelete?.originalname}</strong>?
+    </DialogContentText>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>Cancel</Button>
+    <Button variant="contained" color="error" onClick={confirmDelete} disabled={deleting}>
+      {deleting ? <CircularProgress size={20} /> : "Delete"}
+    </Button>
+  </DialogActions>
+</Dialog>
+
       {/* Snackbar remains unchanged */}
 
       <Snackbar

@@ -292,7 +292,7 @@ const exportToPDF = () => {
       
 
       {/* Entries Table */}
-        <TableContainer component={Paper} sx={{ maxHeight: 400, overflow: 'auto' }}>
+        <TableContainer component={Paper} sx={{ maxHeight: 500, overflow: 'auto' }}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>

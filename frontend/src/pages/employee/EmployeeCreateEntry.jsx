@@ -206,9 +206,8 @@ const EmployeeTaskManager = () => {
         <Button variant="outlined" onClick={exportToExcel}>Export to Excel</Button>
         <Button variant="outlined" onClick={exportToPDF}>Export to PDF</Button>
       </Box>
-      
-      <TableContainer component={Paper} sx={{ maxHeight: 400, overflow: 'auto' }}>
-        <Table  stickyHeader size="small">
+      <TableContainer component={Paper} sx={{ maxHeight: 500, overflow: 'auto' }}>
+        <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
               {["Title", "Description", "Category", "Status", "Due Date", "Date Posted", "Actions"].map(head => (
