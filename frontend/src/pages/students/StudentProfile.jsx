@@ -32,7 +32,7 @@ const StudentProfile = () => {
       const formData = new FormData();
       formData.append("file", file);
       const token = localStorage.getItem("token");
-      const res = await axios.post("/student-profile/profile/upload", formData, {
+      const res = await axios.post("/students-profile/profile/upload", formData, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
       });
       setProfile(prev => ({ ...prev, profilePic: res.data.url }));
@@ -50,7 +50,7 @@ const StudentProfile = () => {
     setSaving(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.put("/student-profile/profile", {
+      await axios.put("/students-profile/profile", {
         name: profile.name, course: profile.course, yearLevel: profile.yearLevel
       }, { headers: { Authorization: `Bearer ${token}` } });
       await refreshStudent();
