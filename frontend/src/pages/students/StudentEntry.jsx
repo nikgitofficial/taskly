@@ -31,6 +31,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SearchIcon from "@mui/icons-material/Search";
+import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -112,76 +115,80 @@ const StudentEntry = () => {
     }
 
     setSubmitting(true);
+const token = localStorage.getItem("token");
+const data = { title, description, category, date };
+
+try {
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  if (editingId) {
+    await axios.put(`/student-entries/${editingId}`, data, config);
+    setSnackMsg("Entry updated successfully!");
+  } else {
+    await axios.post("/student-entries", data, config);
+    setSnackMsg("Entry created successfully!");
+  }
+
+  handleClose();
+  setLoading(true); // ✅ add this
+  await fetchEntries();
+  setSnackOpen(true);
+} catch (error) {
+  console.error("❌ Error submitting form:", error?.response?.data || error.message);
+  alert("Failed to submit entry");
+} finally {
+  setSubmitting(false);
+}
+
+  };
+
+ 
+const handleToggleDone = async (entry) => {
+  setLoading(true); // ✅ start loading
+  try {
     const token = localStorage.getItem("token");
+    const updated = { ...entry, done: !entry.done };
+    await axios.put(`/student-entries/${entry._id}`, updated, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    await fetchEntries(); // ✅ reload from server
+    setSnackMsg(`Marked as ${entry.done ? "Undone" : "Done"}`);
+    setSnackOpen(true);
+  } catch {
+    alert("Failed to update status");
+  } finally {
+    setLoading(false); // ✅ stop loading
+  }
+};
 
-    const data = { title, description, category, date };
 
-    try {
-      const config = {
-        headers: { Authorization: `Bearer ${token}` },
-      };
-
-      if (editingId) {
-        await axios.put(`/student-entries/${editingId}`, data, config);
-        setSnackMsg("Entry updated successfully!");
-      } else {
-        await axios.post("/student-entries", data, config);
-        setSnackMsg("Entry created successfully!");
-      }
-
-      handleClose();
-      await fetchEntries();
-      setSnackOpen(true);
-    } catch (error) {
-      console.error("❌ Error submitting form:", error?.response?.data || error.message);
-      alert("Failed to submit entry");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleToggleDone = async (entry) => {
-    try {
-      const token = localStorage.getItem("token");
-      const updated = { ...entry, done: !entry.done };
-      await axios.put(`/student-entries/${entry._id}`, updated, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setEntries((prev) =>
-        prev.map((e) => (e._id === entry._id ? updated : e))
-      );
-      setSnackMsg(`Marked as ${entry.done ? "Undone" : "Done"}`);
-      setSnackOpen(true);
-    } catch {
-      alert("Failed to update status");
-    }
-  };
 
   const confirmDelete = (entry) => {
     setEntryToDelete(entry);
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
-    setDeleting(true);
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`/student-entries/${entryToDelete._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setEntries((prev) =>
-        prev.filter((e) => e._id !== entryToDelete._id)
-      );
-      setSnackMsg("Entry deleted successfully!");
-      setSnackOpen(true);
-    } catch {
-      alert("Failed to delete entry");
-    } finally {
-      setDeleting(false);
-      setDeleteDialogOpen(false);
-      setEntryToDelete(null);
-    }
-  };
+ const handleConfirmDelete = async () => {
+  setDeleting(true);
+  setLoading(true); // ✅ start loading
+  try {
+    const token = localStorage.getItem("token");
+    await axios.delete(`/student-entries/${entryToDelete._id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    await fetchEntries(); // ✅ refresh from backend
+    setSnackMsg("Entry deleted successfully!");
+    setSnackOpen(true);
+  } catch {
+    alert("Failed to delete entry");
+  } finally {
+    setDeleting(false);
+    setDeleteDialogOpen(false);
+    setEntryToDelete(null);
+    setLoading(false); // ✅ stop loading
+  }
+};
+
 
   const handleEdit = (entry) => {
     setForm({
@@ -199,6 +206,45 @@ const StudentEntry = () => {
     setEditingId(null);
     setForm({ title: "", description: "", category: "", date: "" });
   };
+  const exportToExcel = () => {
+  const worksheet = XLSX.utils.json_to_sheet(filteredEntries.map(entry => ({
+    Title: entry.title,
+    Description: entry.description,
+    Category: entry.category,
+    "Due Date": entry.date ? new Date(entry.date).toLocaleDateString() : "N/A",
+    "Posted Date": entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A",
+    Status: entry.done ? "Done" : "Pending"
+  })));
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Student Entries");
+  XLSX.writeFile(workbook, "Student_Entries.xlsx");
+};
+
+const exportToPDF = () => {
+  const doc = new jsPDF();
+  doc.text("Student Entries Report", 14, 15);
+
+  const tableData = filteredEntries.map(entry => [
+    entry.title,
+    entry.description.length > 30 ? entry.description.slice(0, 30) + "..." : entry.description,
+    entry.category,
+    entry.date ? new Date(entry.date).toLocaleDateString() : "N/A",
+    entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A",
+    entry.done ? "Done" : "Pending"
+  ]);
+
+  doc.autoTable({
+    head: [["Title", "Description", "Category", "Due Date", "Posted Date", "Status"]],
+    body: tableData,
+    startY: 25,
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [0, 0, 0] }
+  });
+
+  doc.save("Student_Entries_Report.pdf");
+};
+
 
   return (
     <Box sx={{ p: isMobile ? 2 : 4 }}>
@@ -207,46 +253,46 @@ const StudentEntry = () => {
       </Typography>
 
       {/* Search & Filter */}
-      <Box sx={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 2, mb: 3 }}>
-        <TextField
-          label="Search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          fullWidth
-          variant="outlined"
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ flex: 2 }}
-        />
-        <TextField
-          label="Category"
-          select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          variant="outlined"
-          size="small"
-          sx={{ flex: 1 }}
-        >
-          {categories.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Box>
+<Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap" }}>
+  <TextField
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    placeholder="Search"
+    InputProps={{
+      startAdornment: (
+        <InputAdornment position="start">
+          <SearchIcon />
+        </InputAdornment>
+      ),
+    }}
+    size="small"
+    sx={{ minWidth: 200 }}
+  />
+  <TextField
+    select
+    value={filterCategory}
+    onChange={(e) => setFilterCategory(e.target.value)}
+    size="small"
+    sx={{ minWidth: 180 }}
+  >
+    {categories.map((option) => (
+      <MenuItem key={option} value={option}>
+        {option}
+      </MenuItem>
+    ))}
+  </TextField>
+</Box>
 
-      <Button variant="contained" onClick={() => setOpen(true)} sx={{ mb: 2 }} fullWidth={isMobile}>
-        + Create New Entry
-      </Button>
+    
+        <Box display="flex" gap={2} mb={2}>
+              <Button variant="contained" onClick={() => setOpen(true)}>+ Add Task</Button>
+              <Button variant="outlined" onClick={exportToExcel}>Export to Excel</Button>
+              <Button variant="outlined" onClick={exportToPDF}>Export to PDF</Button>
+            </Box>
+      
 
       {/* Entries Table */}
-      <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={{ maxHeight: 400, overflow: 'auto' }}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
@@ -261,11 +307,14 @@ const StudentEntry = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">Loading...</TableCell>
-              </TableRow>
-            ) : filteredEntries.length === 0 ? (
+          {loading ? (
+  <TableRow>
+    <TableCell colSpan={7} align="center">
+      <CircularProgress size={30} />
+    </TableCell>
+  </TableRow>
+) : filteredEntries.length === 0 ? (
+
               <TableRow>
                 <TableCell colSpan={7} align="center">No entries found.</TableCell>
               </TableRow>

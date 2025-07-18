@@ -39,7 +39,7 @@ const Login = () => {
       setSnackOpen(true);
 
       setTimeout(() => {
-        if (user?.role === "student") navigate("/student-dashboard");
+        if (user?.role === "student") navigate("/student-home");
         else if (user?.role === "admin") navigate("/admin-dashboard");
         else if (user?.role === "work") navigate("/work-dashboard");
         else if (user?.role === "employee") navigate("/employee-home");

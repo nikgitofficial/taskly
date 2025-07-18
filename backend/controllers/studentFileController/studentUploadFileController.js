@@ -1,5 +1,6 @@
 // controllers/blobUploadController.js
 import { put, del } from "@vercel/blob";
+import axios from "axios"; 
 import BlobFile from "../../models/StudentFile.js";
 
 export const uploadFile = async (req, res) => {
@@ -7,7 +8,7 @@ export const uploadFile = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-
+    const description = req.body?.description || "";
     const { originalname, mimetype, buffer, size } = req.file;
 
     const blob = await put(originalname, buffer, {
@@ -23,6 +24,7 @@ export const uploadFile = async (req, res) => {
       originalname,
       mimetype,
       size,
+      description,
     });
 
     await newFile.save();
