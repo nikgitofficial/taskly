@@ -23,7 +23,7 @@ const EmployeeProfile = () => {
       setProfile({
         name: employee.name || "",
         department: employee.department || "",
-        yearLevel: employee.position || "",
+        position: employee.position || "",
         profilePic: employee.profilePic || "",
       });
     }
@@ -57,7 +57,7 @@ const EmployeeProfile = () => {
       await axios.put("/employees-profile/profile", {
         name: profile.name,
         department: profile.department,
-        position: profile.postion
+        position: profile.position
       });
       await refreshEmployee();
       setEditMode(false);
@@ -103,10 +103,10 @@ const EmployeeProfile = () => {
               <>
                 <TextField label="Full Name" value={profile.name}
                   onChange={(e) => setProfile({ ...profile, name: e.target.value })} fullWidth />
-                <TextField label="Course" value={profile.department}
+                <TextField label="Department" value={profile.department}
                   onChange={(e) => setProfile({ ...profile, department: e.target.value })} fullWidth />
-                <TextField label="Year Level" value={profile.postion}
-                  onChange={(e) => setProfile({ ...profile, postion: e.target.value })} fullWidth />
+                <TextField label="Position" value={profile.position}
+                  onChange={(e) => setProfile({ ...profile, position: e.target.value })} fullWidth />
                 <Stack direction="row" spacing={2}>
                   <Button variant="contained" onClick={handleSaveProfile} disabled={saving}>
                     {saving ? <CircularProgress size={20} color="inherit" /> : "Save"}

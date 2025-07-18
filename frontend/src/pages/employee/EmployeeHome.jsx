@@ -28,7 +28,7 @@ const EmployeeHome = () => {
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
-        const res = await axios.get("/employees/me", {
+        const res = await axios.get("/employees-profile/profile", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setEmployee(res.data);
