@@ -203,8 +203,34 @@ const EmployeeTaskManager = () => {
       </Box>
       <Box display="flex" gap={2} mb={2}>
         <Button variant="contained" onClick={() => setOpen(true)}>+ Add Task</Button>
-        <Button variant="outlined" onClick={exportToExcel}>Export to Excel</Button>
-        <Button variant="outlined" onClick={exportToPDF}>Export to PDF</Button>
+        <Button
+  variant="contained"
+  onClick={exportToExcel}
+  sx={{
+    backgroundColor: '#4CAF50',
+    color: '#fff',
+    '&:hover': {
+      backgroundColor: '#43A047',
+    },
+  }}
+>
+  Export to Excel
+</Button>
+<Button
+  variant="contained"
+  onClick={exportToPDF}
+  sx={{
+    backgroundColor: '#000',
+    color: '#fff',
+    '&:hover': {
+      backgroundColor: '#333',
+    },
+  }}
+>
+  Export to PDF
+</Button>
+
+  
       </Box>
       <TableContainer component={Paper} sx={{ maxHeight: 500, overflow: 'auto' }}>
         <Table stickyHeader size="small">
