@@ -10,7 +10,7 @@ import helmet from "helmet";
 import authRoutes from "./routes/authRoutes.js";
 import studentEntryRoutes from "./routes/studentEntryRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
-import blobUploadRoutes from "./routes/studentFileRoutes.js";
+import studentFileRoutes from "./routes/studentFileRoutes.js";  
 import employeeRoutes from "./routes/employeeRoutes.js";
 import employeeTaskRoutes from "./routes/employeeTaskRoutes.js";
 import employeeFileRoutes from "./routes/employeeFileRoutes.js";
@@ -46,10 +46,10 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/student-entries", studentEntryRoutes);
 app.use("/api/students", studentRoutes);
-app.use("/api/blob", blobUploadRoutes);
+app.use("/api/student-files", studentFileRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/employee-tasks", employeeTaskRoutes);
-app.use("/api/employee-files", employeeFileRoutes); // ✅ This is correct
+app.use("/api/employee-files", employeeFileRoutes);
 
 app.get("/", (req, res) => {
   res.send("🚀 Taskly backend is running!");

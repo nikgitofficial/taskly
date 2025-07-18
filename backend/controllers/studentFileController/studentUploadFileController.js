@@ -1,7 +1,7 @@
-// controllers/blobUploadController.js
+
 import { put, del } from "@vercel/blob";
 import axios from "axios"; 
-import BlobFile from "../../models/StudentFile.js";
+import StudentFile from "../../models/StudentFile.js";
 
 export const uploadFile = async (req, res) => {
   try {
@@ -17,7 +17,7 @@ export const uploadFile = async (req, res) => {
       addRandomSuffix: true,
     });
 
-    const newFile = new BlobFile({
+    const newFile = new StudentFile({
       filename: blob.pathname,
       url: blob.url,
       userId: req.user.id,
@@ -37,7 +37,7 @@ export const uploadFile = async (req, res) => {
 
 export const getUserFiles = async (req, res) => {
   try {
-    const files = await BlobFile.find({ userId: req.user.id });
+    const files = await StudentFile.find({ userId: req.user.id });
     res.json(files);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -46,7 +46,7 @@ export const getUserFiles = async (req, res) => {
 
 export const downloadFile = async (req, res) => {
   try {
-    const file = await BlobFile.findById(req.params.id);
+    const file = await StudentFile.findById(req.params.id);
     if (!file || file.userId.toString() !== req.user.id)
       return res.status(404).json({ message: "File not found" });
 
@@ -68,8 +68,8 @@ export const downloadFile = async (req, res) => {
 
 export const renameFile = async (req, res) => {
   try {
-    const file = await BlobFile.findById(req.params.id);
-    if (!file || file.userId.toString() !== req.user.id)
+    const file = await StudentFile.findById(req.params.id);
+    if (!file || file.uwserId.toString() !== req.user.id)
       return res.status(404).json({ message: "File not found" });
 
     file.originalname = req.body.newName;
@@ -82,12 +82,12 @@ export const renameFile = async (req, res) => {
 
 export const deleteFile = async (req, res) => {
   try { 
-    const file = await BlobFile.findById(req.params.id);
+    const file = await StudentFile.findById(req.params.id);
     if (!file || file.userId.toString() !== req.user.id)
       return res.status(404).json({ message: "File not found" });
 
     await del(file.filename);
-    await BlobFile.findByIdAndDelete(file._id);
+    await StudentFile.findByIdAndDelete(file._id);
     res.json({ message: "File deleted" });
   } catch (err) {
     console.error("❌ Delete error:", err);

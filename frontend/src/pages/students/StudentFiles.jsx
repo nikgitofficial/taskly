@@ -89,7 +89,7 @@ const FileUploader = () => {
   const fetchFiles = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/blob/files", getAuthHeaders());
+      const res = await axios.get("/student-files/files", getAuthHeaders());
       setUploadedFiles(res.data);
     } catch (err) {
       console.error("❌ Failed to load files:", err.message);
@@ -107,7 +107,7 @@ const FileUploader = () => {
     formData.append("description", description);
 
     try {
-      await axios.post("/blob/upload", formData, {
+      await axios.post("/student-file/upload", formData, {
         ...getAuthHeaders(),
         headers: {
           ...getAuthHeaders().headers,
@@ -141,7 +141,7 @@ const FileUploader = () => {
     }
     setRenaming(true);
     try {
-      await axios.put(`/blob/rename/${fileToRename._id}`, { newName: newFileName }, getAuthHeaders());
+      await axios.put(`/student-file/rename/${fileToRename._id}`, { newName: newFileName }, getAuthHeaders());
       showSnack("✏️ File renamed", "success", green[700]);
       await fetchFiles();
       setRenameDialogOpen(false);
@@ -163,7 +163,7 @@ const FileUploader = () => {
   const confirmDelete = async () => {
     setDeleting(true);
     try {
-      await axios.delete(`/blob/delete/${fileToDelete._id}`, getAuthHeaders());
+      await axios.delete(`/student-file/delete/${fileToDelete._id}`, getAuthHeaders());
       showSnack("🗑️ File deleted", "success", red[700]);
       await fetchFiles();
       setDeleteDialogOpen(false);
