@@ -10,10 +10,11 @@ import helmet from "helmet";
 import authRoutes from "./routes/authRoutes.js";
 import studentEntryRoutes from "./routes/studentEntryRoutes.js";
 import studentFileRoutes from "./routes/studentFileRoutes.js";  
-import employeeRoutes from "./routes/employeeRoutes.js";
+import studentProfileRoutes from "./routes/studentProfileRoutes.js";
+import employeeProfileRoutes from "./routes/employeeProfileRoutes.js";
 import employeeTaskRoutes from "./routes/employeeTaskRoutes.js";
 import employeeFileRoutes from "./routes/employeeFileRoutes.js";
-import studentProfileRoutes from "./routes/studentProfileRoutes.js";
+
 
 dotenv.config();
 const app = express();
@@ -47,7 +48,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/student-entries", studentEntryRoutes);
 app.use("/api/students-profile", studentProfileRoutes);
 app.use("/api/student-files", studentFileRoutes);
-app.use("/api/employees", employeeRoutes);
+app.use("/api/employees-profile", employeeProfileRoutes);
 app.use("/api/employee-tasks", employeeTaskRoutes);
 app.use("/api/employee-files", employeeFileRoutes);
 
