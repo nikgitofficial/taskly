@@ -69,7 +69,7 @@ export const downloadFile = async (req, res) => {
 export const renameFile = async (req, res) => {
   try {
     const file = await StudentFile.findById(req.params.id);
-    if (!file || file.uwserId.toString() !== req.user.id)
+    if (!file || file.userId.toString() !== req.user.id)
       return res.status(404).json({ message: "File not found" });
 
     file.originalname = req.body.newName;
