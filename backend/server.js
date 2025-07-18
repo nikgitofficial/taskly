@@ -9,11 +9,11 @@ import helmet from "helmet";
 // Routes
 import authRoutes from "./routes/authRoutes.js";
 import studentEntryRoutes from "./routes/studentEntryRoutes.js";
-import studentRoutes from "./routes/studentRoutes.js";
 import studentFileRoutes from "./routes/studentFileRoutes.js";  
 import employeeRoutes from "./routes/employeeRoutes.js";
 import employeeTaskRoutes from "./routes/employeeTaskRoutes.js";
 import employeeFileRoutes from "./routes/employeeFileRoutes.js";
+import studentProfileRoutes from "./routes/studentProfileRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -45,7 +45,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/student-entries", studentEntryRoutes);
-app.use("/api/students", studentRoutes);
+app.use("/api/students-profile", studentProfileRoutes);
 app.use("/api/student-files", studentFileRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/employee-tasks", employeeTaskRoutes);

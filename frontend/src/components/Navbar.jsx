@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import {
   AppBar,
   Toolbar,
@@ -48,24 +47,22 @@ const Navbar = () => {
   };
 
   const navItems = [
-   
     ...(isStudent
       ? [
           { to: "/student-home", label: "Home" },
           { to: "/student-entry", label: "Create Entry" },
           { to: "/student-profile", label: "Profile" },
           { to: "/student-dashboard", label: "Dashboard" },
-          { to: "/student-files", label: "Files" }, 
-        ] 
-          : isEmployee
-    ? [
-        { to: "/employee-home", label: "Home" },
-        { to: "/employee-profile", label: "Profile" },
-        { to: "/employee-create-entry", label: "Create Entry" },
-        { to: "/employee-file", label: "Files" },
-        { to: "/employee-dashboard", label: "Dashboard" },
-        
-      ]
+          { to: "/student-files", label: "Files" },
+        ]
+      : isEmployee
+      ? [
+          { to: "/employee-home", label: "Home" },
+          { to: "/employee-profile", label: "Profile" },
+          { to: "/employee-create-entry", label: "Create Entry" },
+          { to: "/employee-file", label: "Files" },
+          { to: "/employee-dashboard", label: "Dashboard" },
+        ]
       : []),
   ];
 
@@ -140,6 +137,32 @@ const Navbar = () => {
                   {navItems.map((item) => (
                     <NavButton key={item.to} to={item.to} label={item.label} />
                   ))}
+
+                  {/* Avatar Profile Icon */}
+                  <IconButton
+                    component={NavLink}
+                    to="/student-profile"
+                    sx={{
+                      p: 0,
+                      ml: 1,
+                      border: '2px solid #fff',
+                      '&:hover': { borderColor: '#1976d2' },
+                    }}
+                  >
+                    <Avatar
+                      src={user?.profilePic}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        bgcolor: "#1976d2",
+                        color: "#fff",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {!user?.profilePic && (user?.email?.[0]?.toUpperCase() || "U")}
+                    </Avatar>
+                  </IconButton>
+
                   <Button
                     onClick={handleLogout}
                     variant="contained"
@@ -182,6 +205,28 @@ const Navbar = () => {
                   },
                 }}
               >
+                {user && (
+                  <Box display="flex" flexDirection="column" alignItems="center" p={2}>
+                    <Avatar
+                      src={user?.profilePic}
+                      component={NavLink}
+                      to="/student-profile"
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        mb: 1,
+                        bgcolor: "#1976d2",
+                        color: "#fff",
+                        textDecoration: "none",
+                      }}
+                      onClick={handleMenuClose}
+                    >
+                      {!user?.profilePic && (user?.email?.[0]?.toUpperCase() || "U")}
+                    </Avatar>
+                    <Typography fontSize={14}>{user?.email}</Typography>
+                  </Box>
+                )}
+
                 {user ? (
                   <>
                     {navItems.map((item) => (
