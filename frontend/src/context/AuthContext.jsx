@@ -18,9 +18,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
 
-    // Set profile based on role
-    if (res.data.user.role === "student") setStudent(res.data.student || null);
-    else if (res.data.user.role === "employee") setEmployee(res.data.employee || null);
+    if (res.data.user.role === "student") {
+      setStudent(res.data.student || null);
+    } else if (res.data.user.role === "employee") {
+      setEmployee(res.data.employee || null);
+    }
 
     return res.data.user;
   };
@@ -28,7 +30,9 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await axios.post("/auth/logout");
-    } catch {}
+    } catch (err) {
+      console.warn("Logout error ignored:", err);
+    }
     localStorage.removeItem("token");
     setUser(null);
     setStudent(null);
@@ -39,7 +43,7 @@ export const AuthProvider = ({ children }) => {
   const refreshStudent = useCallback(async () => {
     setProfileLoading(true);
     try {
-      const res = await axios.get("/students/profile");
+      const res = await axios.get("/students-profile/profile");
       setStudent(res.data);
     } catch (err) {
       console.error("❌ Failed to refresh student:", err);
@@ -71,7 +75,6 @@ export const AuthProvider = ({ children }) => {
         const userRes = await axios.get("/auth/me");
         setUser(userRes.data);
 
-        // Load profile according to role
         if (userRes.data.role === "student") {
           await refreshStudent();
         } else if (userRes.data.role === "employee") {
@@ -82,7 +85,9 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         console.error("❌ Auth error:", err);
-        await logout();
+        setUser(null);
+        setStudent(null);
+        setEmployee(null);
       } finally {
         setLoading(false);
       }
@@ -93,17 +98,15 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "1rem",
-          fontSize: "1.5rem",
-        }}
-      >
+      <div style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "1rem",
+        fontSize: "1.5rem",
+      }}>
         <CircularProgress size={60} />
         Loading...
       </div>
