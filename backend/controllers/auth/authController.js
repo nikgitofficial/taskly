@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import User from "../../models/User.js";
 import Student from "../../models/Student.js";
 import Employee from "../../models/Employee.js";
+import Admin from "../../models/Admin.js";
 
 // Token generators
 const generateAccessToken = (user) =>
@@ -50,6 +51,14 @@ export const register = async (req, res) => {
       }
       await Employee.create({ userId: newUser._id, name, department, position });
     }
+    
+    if (role === "admin") {
+      if (!name) {
+        await newUser.deleteOne();
+        return res.status(400).json({ message: "Missing admin information (name)." });
+      }
+      await Admin.create({ userId: newUser._id, name });
+    }
 
     res.status(201).json({ message: "User registered successfully." });
   } catch (err) {
@@ -79,11 +88,15 @@ export const login = async (req, res) => {
 
     let student = null;
     let employee = null;
+    let admin = null;
 
     if (user.role === "student") {
       student = await Student.findOne({ userId: user._id });
     } else if (user.role === "employee") {
       employee = await Employee.findOne({ userId: user._id });
+    }
+    else if (user.role === "admin") {
+      admin = await Admin.findOne({ userId: user._id });
     }
 
     res.cookie("refreshToken", refreshToken, {
@@ -93,7 +106,7 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    res.json({ token: accessToken, user: userInfo, student, employee });
+    res.json({ token: accessToken, user: userInfo, student, employee,admin });
   } catch (err) {
     console.error("❌ Login error:", err);
     res.status(500).json({ message: "Login failed." });

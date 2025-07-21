@@ -2,14 +2,14 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const EmployeeRoute = ({ children }) => {
+const AdminRoute = ({ children }) => {
   const { user } = useAuth();
 
   if (!user) return <Navigate to="/login" />;
 
-  if (user.role !== "employee") return <Navigate to="/" />;
+  if (user.role !== "admin") return <Navigate to="/" />;
 
   return children;
 };
 
-export default EmployeeRoute;
+export default AdminRoute;

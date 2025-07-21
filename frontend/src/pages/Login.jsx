@@ -40,7 +40,7 @@ const Login = () => {
 
       setTimeout(() => {
         if (user?.role === "student") navigate("/student-home");
-        else if (user?.role === "admin") navigate("/admin-dashboard");
+        else if (user?.role === "admin") navigate("/admin-home");
         else if (user?.role === "work") navigate("/work-dashboard");
         else if (user?.role === "employee") navigate("/employee-home");
         else navigate("/");

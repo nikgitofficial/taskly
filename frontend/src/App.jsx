@@ -12,6 +12,7 @@ import NotAuthorized from "./pages/NotAuthorized";
 import PrivateRoute from "./components/PrivateRoute";
 import StudentRoute from "./components/routes/StudentRoute";
 import EmployeeRoute from "./components/routes/EmployeeRoute";
+import AdminRoute from "./components/routes/AdminRoute";
 
 import StudentEntry from "./pages/students/StudentEntry";
 import StudentDashboard from "./pages/students/StudentDashboard";
@@ -24,6 +25,9 @@ import EmployeeProfile from "./pages/employee/EmployeeProfile";
 import EmployeeCreateEntry from "./pages/employee/EmployeeCreateEntry";
 import EmployeeFile from "./pages/employee/EmployeeFile"
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard"
+
+import AdminHome from "./pages/admin/AdminHome";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 const App = () => {
   return (
@@ -48,6 +52,11 @@ const App = () => {
           <Route path="/employee-create-entry" element={<EmployeeRoute><EmployeeCreateEntry /></EmployeeRoute>} />
           <Route path="/employee-file" element={<EmployeeRoute><EmployeeFile /></EmployeeRoute>} />
           <Route path="/employee-dashboard" element={<EmployeeRoute><EmployeeDashboard /></EmployeeRoute>} />
+
+            
+          {/* ✅ Admin Routes */}
+          <Route path="/admin-home" element={<AdminRoute><AdminHome /></AdminRoute>} />
+          <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
           {/* ✅ Public Routes */}
           <Route path="/login" element={<Login />} />

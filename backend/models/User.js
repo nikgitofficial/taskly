@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ['user', 'admin', "student",'employee'], default: 'user' }
   },
   {
-    timestamps: true // ⬅️ Automatically adds createdAt and updatedAt
+    timestamps: true 
   }
 );
 

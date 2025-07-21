@@ -26,6 +26,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const isStudent = user?.role === "student";
   const isEmployee = user?.role === "employee";
+  const isAdmin = user?.role === "admin";
   const isMobile = useMediaQuery("(max-width:768px)");
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -66,7 +67,16 @@ const Navbar = () => {
         { to: "/employee-dashboard", label: "Dashboard" },
         
       ]
+             : isAdmin
+    ? [
+        { to: "/admin-home", label: "Admin  home" },
+        { to: "/admin-dashboard", label: "Admin  Dashboard" },
+  
+        
+      ]
+      
       : []),
+      
   ];
 
   if (logoutLoading) {

@@ -14,7 +14,7 @@ import studentProfileRoutes from "./routes/studentProfileRoutes.js";
 import employeeProfileRoutes from "./routes/employeeProfileRoutes.js";
 import employeeTaskRoutes from "./routes/employeeTaskRoutes.js";
 import employeeFileRoutes from "./routes/employeeFileRoutes.js";
-
+import adminRoutes from "./routes/adminRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -51,6 +51,7 @@ app.use("/api/student-files", studentFileRoutes);
 app.use("/api/employees-profile", employeeProfileRoutes);
 app.use("/api/employee-tasks", employeeTaskRoutes);
 app.use("/api/employee-files", employeeFileRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.send("🚀 Taskly backend is running!");
