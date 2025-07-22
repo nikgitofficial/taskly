@@ -60,7 +60,7 @@ app.use("/api/employees-profile", employeeProfileRoutes);
 app.use("/api/employee-tasks", employeeTaskRoutes);
 app.use("/api/employee-files", employeeFileRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/admin/profile", adminProfileRoutes);
+app.use("/api/admin", adminProfileRoutes);
 app.use('/api/contact', contactRoutes);
 
 app.get("/", (req, res) => {
