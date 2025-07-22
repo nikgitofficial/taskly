@@ -33,7 +33,7 @@ export const getAllContactMessages = async (req, res) => {
   }
 };
 
-// ✅ Only count unread messages
+
 export const getContactMessageCount = async (req, res) => {
   try {
     const count = await ContactMessage.countDocuments({ isRead: false });
@@ -41,4 +41,18 @@ export const getContactMessageCount = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Failed to get message count" });
   }
+
+  
 };
+export const deleteContactMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await ContactMessage.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: "Message not found" });
+    res.status(200).json({ message: "Message deleted successfully" });
+  } catch (error) {
+    console.error("❌ Failed to delete message:", error);
+    res.status(500).json({ message: "Server error deleting message" });
+  }
+};
+

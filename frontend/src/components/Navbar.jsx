@@ -1,23 +1,11 @@
 import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  Box,
-  Stack,
-  IconButton,
-  Menu,
-  MenuItem,
-  useMediaQuery,
-  Avatar,
-  CircularProgress,
-  Snackbar,
-  Fade,
-  Badge,
+  AppBar, Toolbar, Typography, Button, Box, Stack, IconButton,
+  Menu, MenuItem, useMediaQuery, Avatar, CircularProgress, Snackbar,
+  Fade, Badge
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import MarkunreadIcon from "@mui/icons-material/Markunread";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import axios from "../api/axios";
@@ -26,6 +14,7 @@ import logo from "../assets/logo1.png";
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isStudent = user?.role === "student";
   const isEmployee = user?.role === "employee";
   const isAdmin = user?.role === "admin";
@@ -36,20 +25,25 @@ const Navbar = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
 
-  // ✅ Fetch Message Count
-  useEffect(() => {
-    const fetchCount = async () => {
-      try {
-        const { data } = await axios.get("/contact/message-count");
-        setMessageCount(data.count);
-      } catch (err) {
-        console.error("❌ Failed to fetch message count:", err);
-      }
-    };
+  const fetchCount = async () => {
+    try {
+      const { data } = await axios.get("/contact/message-count");
+      setMessageCount(data.count);
+    } catch (err) {
+      console.error("❌ Failed to fetch message count:", err);
+    }
+  };
 
+  useEffect(() => {
     if (isAdmin) {
       fetchCount();
-      const interval = setInterval(fetchCount, 60000); // auto-refresh every 60 seconds
+    }
+  }, [location.pathname, isAdmin]); // ✅ refetch when route changes
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchCount();
+      const interval = setInterval(fetchCount, 60000);
       return () => clearInterval(interval);
     }
   }, [isAdmin]);
@@ -94,11 +88,7 @@ const Navbar = () => {
             to: "/admin-contact-messages",
             label: `Messages (${messageCount})`,
             icon: (
-              <Badge
-                badgeContent={messageCount}
-                color="error"
-                sx={{ mr: 1 }}
-              >
+              <Badge badgeContent={messageCount} color="error" sx={{ mr: 1 }}>
                 <MarkunreadIcon />
               </Badge>
             ),
@@ -161,11 +151,7 @@ const Navbar = () => {
               color: "inherit",
             }}
           >
-            <img
-              src={logo}
-              alt="Logo"
-              style={{ height: 40, borderRadius: 8, marginRight: 10 }}
-            />
+            <img src={logo} alt="Logo" style={{ height: 40, borderRadius: 8, marginRight: 10 }} />
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
               Taskly
             </Typography>
@@ -176,12 +162,7 @@ const Navbar = () => {
               {user ? (
                 <>
                   {navItems.map((item) => (
-                    <NavButton
-                      key={item.to}
-                      to={item.to}
-                      label={item.label}
-                      icon={item.icon}
-                    />
+                    <NavButton key={item.to} to={item.to} label={item.label} icon={item.icon} />
                   ))}
                   <Button
                     onClick={handleLogout}
@@ -238,11 +219,7 @@ const Navbar = () => {
                           "&.active": { backgroundColor: "#444" },
                         }}
                       >
-                        {item.icon && (
-                          <Box component="span" sx={{ mr: 1 }}>
-                            {item.icon}
-                          </Box>
-                        )}
+                        {item.icon && <Box component="span" sx={{ mr: 1 }}>{item.icon}</Box>}
                         {item.label}
                       </MenuItem>
                     ))}

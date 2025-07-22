@@ -30,6 +30,17 @@ const AdminContactMessages = () => {
     fetchMessages();
   }, []);
 
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this message?")) {
+      try {
+        await axios.delete(`/contact/delete/${id}`);
+        setMessages((prev) => prev.filter((msg) => msg._id !== id));
+      } catch (err) {
+        console.error("❌ Failed to delete message:", err);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -40,38 +51,17 @@ const AdminContactMessages = () => {
 
   return (
     <Box p={{ xs: 2, md: 4 }} bgcolor={theme.palette.background.default} minHeight="100vh">
-      
-      {/* ✅ Back Button */}
       <Stack direction="row" justifyContent="flex-end" mb={2}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate("/admin-home")}
-        >
+        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate("/admin-home")}>
           Back to Admin Home
         </Button>
       </Stack>
 
-      <Typography
-        variant="h4"
-        fontWeight="bold"
-        mb={3}
-        color="primary.main"
-        textAlign={{ xs: "center", md: "left" }}
-      >
+      <Typography variant="h4" fontWeight="bold" mb={3} color="primary.main" textAlign={{ xs: "center", md: "left" }}>
         📩 Contact Messages
       </Typography>
 
-      <Paper
-        elevation={4}
-        sx={{
-          p: { xs: 2, md: 4 },
-          borderRadius: 4,
-          maxWidth: 1000,
-          mx: "auto",
-          bgcolor: theme.palette.background.paper,
-        }}
-      >
+      <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, maxWidth: 1000, mx: "auto" }}>
         {messages.length === 0 ? (
           <Typography variant="body1" color="text.secondary">No messages received yet.</Typography>
         ) : (
@@ -94,9 +84,7 @@ const AdminContactMessages = () => {
                       <MailIcon />
                     </Avatar>
                     <Box flexGrow={1}>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        {msg.name}
-                      </Typography>
+                      <Typography variant="subtitle1" fontWeight={600}>{msg.name}</Typography>
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <EmailIcon sx={{ fontSize: 18, color: "text.secondary" }} />
                         <Typography variant="body2" color="text.secondary">{msg.email}</Typography>
@@ -114,10 +102,14 @@ const AdminContactMessages = () => {
 
                   <Divider sx={{ my: 2 }} />
 
-                  <Stack direction="row" spacing={1} alignItems="flex-start">
+                  <Stack direction="row" spacing={1} alignItems="flex-start" mb={2}>
                     <MessageIcon color="primary" />
                     <Typography variant="body2" color="text.primary">{msg.message}</Typography>
                   </Stack>
+
+                  <Button variant="outlined" color="error" onClick={() => handleDelete(msg._id)}>
+                    Delete
+                  </Button>
                 </Box>
               </Fade>
             ))}
