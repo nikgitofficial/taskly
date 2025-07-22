@@ -33,6 +33,9 @@ import UserDetails from "./pages/admin/UserDetails";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import AdminContactMessages from "./pages/admin/AdminContactMessages";
+import ManageUsers from "./pages/admin/ManageUsers";
+import StudentUsers from "./pages/admin/StudentUsers";
+import EmployeeUsers from "./pages/admin/EmployeeUsers";
 
 
 const App = () => {
@@ -70,6 +73,9 @@ const App = () => {
           <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/user/:id" element={<AdminRoute><UserDetails /></AdminRoute>} />
           <Route path="/admin-contact-messages" element={<AdminRoute><AdminContactMessages /></AdminRoute>} />
+          <Route path="/manage-users" element={<AdminRoute><ManageUsers /></AdminRoute>} />
+          <Route path="/student-users" element={<AdminRoute><StudentUsers /></AdminRoute>} />
+          <Route path="/employee-users" element={<AdminRoute><EmployeeUsers /></AdminRoute>} />
 
 
           {/* ✅ Public Routes */}

@@ -1,3 +1,4 @@
+// AdminDashboard.jsx
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import {
@@ -12,10 +13,11 @@ import {
   Divider,
   Grid,
 } from "@mui/material";
-import PersonIcon from "@mui/icons-material/Person";
+import { motion } from "framer-motion";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import FolderIcon from "@mui/icons-material/Folder";
 import DescriptionIcon from "@mui/icons-material/Description";
-import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import PersonIcon from "@mui/icons-material/Person";
 import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
@@ -53,149 +55,100 @@ const AdminDashboard = () => {
   }
 
   return (
-    <Box p={{ xs: 2, md: 4 }} bgcolor={theme.palette.background.default} minHeight="100vh">
+    <Box p={{ xs: 2, md: 4 }} minHeight="100vh" bgcolor={theme.palette.background.default}>
       <Typography
         variant="h4"
         fontWeight="bold"
-        mb={3}
-        color={theme.palette.primary.main}
+        mb={4}
+        color="primary.main"
         textAlign={{ xs: "center", md: "left" }}
       >
         📊 Admin Dashboard
       </Typography>
 
-      {/* ✅ Summary Counts */}
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} md={4}>
-          <Paper
-            elevation={3}
-            sx={{
-              p: 3,
-              borderRadius: 4,
-              textAlign: "center",
-              bgcolor: "#f9f9f9",
-              boxShadow: "0 3px 6px rgba(0,0,0,0.1)",
-              "&:hover": { boxShadow: "0 5px 10px rgba(0,0,0,0.15)", transform: "scale(1.02)", transition: "0.3s" },
-            }}
-          >
-            <PeopleAltIcon sx={{ fontSize: 50, color: "#1976d2" }} />
-            <Typography variant="h6" fontWeight={700} mt={1}>Total Users</Typography>
-            <Typography variant="h4" fontWeight={900}>{totals.totalUsers}</Typography>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <Paper
-            elevation={3}
-            sx={{
-              p: 3,
-              borderRadius: 4,
-              textAlign: "center",
-              bgcolor: "#f9f9f9",
-              boxShadow: "0 3px 6px rgba(0,0,0,0.1)",
-              "&:hover": { boxShadow: "0 5px 10px rgba(0,0,0,0.15)", transform: "scale(1.02)", transition: "0.3s" },
-            }}
-          >
-            <FolderIcon sx={{ fontSize: 50, color: "#2e7d32" }} />
-            <Typography variant="h6" fontWeight={700} mt={1}>Total Files</Typography>
-            <Typography variant="h4" fontWeight={900}>{totals.totalFiles}</Typography>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <Paper
-            elevation={3}
-            sx={{
-              p: 3,
-              borderRadius: 4,
-              textAlign: "center",
-              bgcolor: "#f9f9f9",
-              boxShadow: "0 3px 6px rgba(0,0,0,0.1)",
-              "&:hover": { boxShadow: "0 5px 10px rgba(0,0,0,0.15)", transform: "scale(1.02)", transition: "0.3s" },
-            }}
-          >
-            <DescriptionIcon sx={{ fontSize: 50, color: "#d32f2f" }} />
-            <Typography variant="h6" fontWeight={700} mt={1}>Total Entries</Typography>
-            <Typography variant="h4" fontWeight={900}>{totals.totalEntries}</Typography>
-          </Paper>
-        </Grid>
+      {/* Summary Cards */}
+      <Grid container spacing={3} mb={5}>
+        {[
+          { icon: <PeopleAltIcon sx={{ fontSize: 50 }} />, label: "Total Users", value: totals.totalUsers, gradient: "linear-gradient(to right, #00c6ff, #0072ff)" },
+          { icon: <FolderIcon sx={{ fontSize: 50 }} />, label: "Total Files", value: totals.totalFiles, gradient: "linear-gradient(to right, #f7971e, #ffd200)" },
+          { icon: <DescriptionIcon sx={{ fontSize: 50 }} />, label: "Total Entries", value: totals.totalEntries, gradient: "linear-gradient(to right, #f953c6, #b91d73)" },
+        ].map((item, index) => (
+          <Grid item xs={12} md={4} key={index}>
+            <motion.div whileHover={{ scale: 1.05 }}>
+              <Paper
+                elevation={4}
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  textAlign: "center",
+                  color: "white",
+                  background: item.gradient,
+                  boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+                  transition: "0.3s",
+                }}
+              >
+                {item.icon}
+                <Typography variant="h6" fontWeight={700} mt={2}>{item.label}</Typography>
+                <Typography variant="h3" fontWeight={900}>{item.value}</Typography>
+              </Paper>
+            </motion.div>
+          </Grid>
+        ))}
       </Grid>
 
-      {/* ✅ User Overview Section */}
-      <Paper
-        elevation={4}
-        sx={{
-          borderRadius: 4,
-          p: { xs: 2, md: 4 },
-          maxWidth: 1000,
-          mx: "auto",
-          bgcolor: theme.palette.background.paper,
-        }}
-      >
-        <Typography variant="h5" fontWeight="bold" gutterBottom color="text.primary">
+      {/* User List */}
+      <Paper elevation={4} sx={{ borderRadius: 4, p: { xs: 2, md: 4 } }}>
+        <Typography variant="h5" fontWeight="bold" mb={3}>
           User Overview
         </Typography>
 
         {summary.length === 0 ? (
-          <Typography variant="body1" color="text.secondary">No user data found.</Typography>
+          <Typography color="text.secondary">No user data found.</Typography>
         ) : (
-          <Box sx={{ maxHeight: "1000px", overflowY: "auto", pr: 1 }}>
-            <Stack spacing={3}>
-              {summary.map((user) => (
+          <Stack spacing={3}>
+            {summary.map((user) => (
+              <motion.div key={user.userId} whileHover={{ scale: 1.02 }}>
                 <Box
-                  key={user.userId}
                   sx={{
-                    border: "1px solid #e0e0e0",
-                    borderRadius: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    bgcolor: "#f9f9f9",
                     p: 2,
-                    backgroundColor: "#f9f9f9",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    borderRadius: 3,
+                    border: "1px solid #e0e0e0",
+                    boxShadow: "0 4px 8px rgba(0,0,0,0.08)",
                   }}
                 >
-                  <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                  <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar
                       sx={{
-                        width: 60,
-                        height: 60,
-                        background: "linear-gradient(135deg, #2196f3, #21cbf3)",
+                        width: 56,
+                        height: 56,
+                        background: "linear-gradient(to right, #2196f3, #21cbf3)",
                       }}
                     >
-                      <PersonIcon fontSize="large" />
+                      <PersonIcon />
                     </Avatar>
-                    <Box flexGrow={1}>
-                      <Typography variant="subtitle1" fontWeight={600}>{user.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">{user.email || "No email available"}</Typography>
+                    <Box>
+                      <Typography fontWeight={700}>{user.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">{user.email}</Typography>
                     </Box>
-                    <Button variant="contained" size="small" onClick={() => navigate(`/admin/user/${user.userId}`)}>View Details</Button>
                   </Stack>
-
-                  <Box mt={2}>
-                    <Stack direction="row" spacing={3} flexWrap="wrap">
-                      <StatBox icon={<FolderIcon color="success" />} label="Files" value={user.fileCount} />
-                      <StatBox icon={<DescriptionIcon color="primary" />} label="Entries" value={user.entryCount} />
-                    </Stack>
-                  </Box>
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate(`/admin/user/${user.userId}`)}
+                  >
+                    View
+                  </Button>
                 </Box>
-              ))}
-            </Stack>
-          </Box>
+              </motion.div>
+            ))}
+          </Stack>
         )}
       </Paper>
     </Box>
   );
 };
-
-// ✅ StatBox Component
-const StatBox = ({ icon, label, value }) => (
-  <Stack direction="row" spacing={1} alignItems="center">
-    {icon}
-    <Typography variant="body2" fontWeight="medium" color="text.secondary">
-      {label}:{" "}
-      <Typography component="span" fontWeight={700} color="text.primary" sx={{ ml: 0.5 }}>
-        {value}
-      </Typography>
-    </Typography>
-  </Stack>
-);
 
 export default AdminDashboard;

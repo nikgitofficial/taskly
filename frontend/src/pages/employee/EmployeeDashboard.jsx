@@ -1,3 +1,4 @@
+// EmployeeDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Link as RouterLink } from "react-router-dom";
@@ -36,10 +37,7 @@ const bgMap = {
   "Idea/Suggestion": "linear-gradient(135deg, #7e57c2, #5e35b1)",
 };
 
-const categories = [
-  "Task", "Project Update", "Meeting", "Training", "Event",
-  "Leave Request", "Incident Report", "Daily Log", "Idea/Suggestion"
-];
+const categories = Object.keys(bgMap);
 
 const EmployeeDashboard = () => {
   const { user, employee } = useAuth();
@@ -49,43 +47,18 @@ const EmployeeDashboard = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTiny = useMediaQuery('(max-width:350px) and (max-height:1000px)');
 
-  // Request permission for notifications
   useEffect(() => {
-    if (Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
+    if (Notification.permission !== "granted") Notification.requestPermission();
   }, []);
 
   useEffect(() => {
     const fetchEntries = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("/employee-tasks", {
+        const { data } = await axios.get("/employee-tasks", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        const filtered = res.data.filter((entry) => !entry.done);
-        setEntries(filtered);
-
-        const now = new Date();
-        const vibrated = JSON.parse(localStorage.getItem("employee_vibrated") || "[]");
-
-        filtered.forEach((entry) => {
-          const due = new Date(entry.date);
-          const diffH = (due - now) / (1000 * 60 * 60);
-          if (diffH > 0 && diffH <= 12 && !vibrated.includes(entry._id)) {
-            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-            if (Notification.permission === "granted") {
-              new Notification("🕑 Upcoming Task", {
-                body: `${entry.title} is due in ${Math.round(diffH)}h`,
-                tag: entry._id,
-              });
-            }
-            vibrated.push(entry._id);
-          }
-        });
-
-        localStorage.setItem("employee_vibrated", JSON.stringify(vibrated));
+        setEntries(data.filter((e) => !e.done));
       } catch (err) {
         console.error("❌ Failed to fetch employee tasks:", err.response?.data || err.message);
         setEntries([]);
@@ -107,25 +80,17 @@ const EmployeeDashboard = () => {
     fetchCurrentDate();
   }, []);
 
-  const counts = categories.reduce(
-    (acc, cat) => ({
-      ...acc,
-      [cat]: entries.filter((e) => e.category === cat).length,
-    }),
-    {}
-  );
+  const counts = categories.reduce((acc, cat) => ({
+    ...acc,
+    [cat]: entries.filter((e) => e.category === cat).length,
+  }), {});
 
-  const upcomingEntries = entries
-    .filter((e) => new Date(e.date) > new Date())
+  const upcomingEntries = entries.filter(e => new Date(e.date) > new Date())
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const upcoming = upcomingEntries[0];
-  const daysLeft = upcoming
-    ? Math.ceil((new Date(upcoming.date) - new Date()) / (1000 * 60 * 60 * 24))
-    : null;
-
-  const dueCount = upcomingEntries.length;
-  const dueTitles = upcomingEntries.slice(0, 3).map((e) => e.title);
+  const daysLeft = upcoming ? Math.ceil((new Date(upcoming.date) - new Date()) / 86400000) : null;
+  const dueTitles = upcomingEntries.slice(0, 3).map(e => e.title);
 
   return (
     <Container maxWidth="sm" sx={{ mt: 2, mb: 4, px: isTiny ? 1 : 2, py: isTiny ? 1 : 2 }}>
@@ -140,11 +105,21 @@ const EmployeeDashboard = () => {
           >
             👋 Welcome Back, {employee?.name || user?.name || "Employee"}
           </Typography>
+
           <Typography variant="body2" align="center" color="text.secondary" gutterBottom>
             Current UTC Time: {apiDate ? new Date(apiDate).toUTCString() : "Loading..."}
           </Typography>
 
-          <Card sx={{ mb: 3, p: isTiny ? 1 : 2, borderRadius: 2, boxShadow: 3, backgroundColor: "#f9f9f9" }}>
+          {/* Profile Card with transparent background */}
+          <Card sx={{
+            mb: 3,
+            p: isTiny ? 1 : 2,
+            borderRadius: 4,
+            backdropFilter: "blur(10px)",
+            background: "rgba(255, 255, 255, 0.1)",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+            border: "1px solid rgba(255, 255, 255, 0.2)"
+          }}>
             <Grid container spacing={1} alignItems="center">
               <Grid item>
                 <Avatar
@@ -169,6 +144,7 @@ const EmployeeDashboard = () => {
             </Grid>
           </Card>
 
+          {/* Task Category Cards */}
           <Grid container spacing={isTiny ? 1 : 2}>
             {categories.map((cat) => (
               <Grid item xs={12} key={cat}>
@@ -181,20 +157,28 @@ const EmployeeDashboard = () => {
                     boxShadow: 3,
                     display: "flex",
                     alignItems: "center",
+                    transition: "transform 0.3s",
+                    "&:hover": { transform: "scale(1.02)" }
                   }}
                 >
                   {iconMap[cat] || <AssignmentIcon fontSize="large" sx={{ color: "#fff" }} />}
                   <Box ml={isTiny ? 1 : 2}>
                     <Typography fontWeight="bold">{cat}</Typography>
-                    <Typography variant={isTiny ? "h6" : "h5"}>{counts[cat]}</Typography>
+                    <Typography variant={isTiny ? "h6" : "h5"}>{counts[cat] || 0}</Typography>
                   </Box>
                 </Card>
               </Grid>
             ))}
 
             <Grid item xs={12}>
-              <Card sx={{ p: isTiny ? 1 : 2, borderRadius: 2, boxShadow: 3, background: "linear-gradient(135deg,#4fc3f7,#0288d1)", color: "#fff" }}>
-                <Typography fontWeight="bold" gutterBottom>📅 Total Upcoming Due ({dueCount})</Typography>
+              <Card sx={{
+                p: isTiny ? 1 : 2,
+                borderRadius: 2,
+                boxShadow: 3,
+                background: "linear-gradient(135deg,#4fc3f7,#0288d1)",
+                color: "#fff"
+              }}>
+                <Typography fontWeight="bold" gutterBottom>📅 Total Upcoming Due ({upcomingEntries.length})</Typography>
                 {dueTitles.length > 0 ? dueTitles.map((title, idx) => (
                   <Typography key={idx} variant="body2">• {title}</Typography>
                 )) : (
@@ -204,7 +188,12 @@ const EmployeeDashboard = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <Card sx={{ p: isTiny ? 1 : 2, borderRadius: 2, boxShadow: 3, background: "linear-gradient(135deg,#ffd54f,#ffca28)" }}>
+              <Card sx={{
+                p: isTiny ? 1 : 2,
+                borderRadius: 2,
+                boxShadow: 3,
+                background: "linear-gradient(135deg,#ffd54f,#ffca28)"
+              }}>
                 <Box display="flex" alignItems="center">
                   <AccessTimeIcon fontSize={isTiny ? "medium" : "large"} />
                   <Box ml={isTiny ? 1 : 2}>

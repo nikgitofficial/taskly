@@ -9,6 +9,7 @@ import {
   Paper,
   Divider,
   Stack,
+  Chip,
 } from "@mui/material";
 
 const UserDetails = () => {
@@ -44,19 +45,21 @@ const UserDetails = () => {
           maxWidth: 600,
           width: "100%",
           borderRadius: 4,
-          bgcolor: "background.paper"
+          bgcolor: "background.paper",
         }}
       >
         <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
           <Avatar
             src={user.profilePic || ""}
             sx={{
-              width: 120,
-              height: 120,
+              width: 130,
+              height: 130,
+              fontSize: 48,
               mb: 2,
-              fontSize: 40,
-              bgcolor: "primary.main",
-              boxShadow: 3,
+              boxShadow: 4,
+              background: user.profilePic
+                ? "transparent"
+                : "linear-gradient(135deg, #2196f3, #21cbf3)",
             }}
           >
             {!user.profilePic && (user.name?.charAt(0).toUpperCase() || "U")}
@@ -68,19 +71,18 @@ const UserDetails = () => {
           <Typography variant="body1" color="text.secondary">
             {user.email}
           </Typography>
-          <Typography
-            variant="caption"
-            color="primary.main"
+
+          <Chip
+            label={user.role?.toUpperCase() || "ROLE"}
+            color="primary"
+            variant="outlined"
             sx={{
-              background: "rgba(25, 118, 210, 0.1)",
-              px: 1.5,
-              py: 0.5,
-              borderRadius: 2,
-              mt: 1
+              mt: 1.5,
+              fontWeight: 700,
+              letterSpacing: 1,
+              fontSize: 12,
             }}
-          >
-            {user.role?.toUpperCase()}
-          </Typography>
+          />
         </Box>
 
         <Divider sx={{ my: 3 }} />
@@ -92,12 +94,14 @@ const UserDetails = () => {
               <Typography variant="subtitle1">📚 <b>Year Level:</b> {user.yearLevel || "N/A"}</Typography>
             </>
           )}
+
           {user.role === "employee" && (
             <>
               <Typography variant="subtitle1">🏢 <b>Department:</b> {user.department || "N/A"}</Typography>
               <Typography variant="subtitle1">💼 <b>Position:</b> {user.position || "N/A"}</Typography>
             </>
           )}
+
           {user.role === "admin" && (
             <Typography variant="subtitle1">👑 <b>Admin account:</b> No additional details.</Typography>
           )}

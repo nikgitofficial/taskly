@@ -93,3 +93,26 @@ export const getUserDetails = async (req, res) => {
 
   return res.json({ ...user.toObject(), name, ...profile });
 };
+
+
+
+export const getStudentUsers = async (req, res) => {
+  try {
+    const students = await Student.find();
+    res.json(students);
+  } catch (error) {
+    console.error("Failed to fetch students:", error.message);
+    res.status(500).json({ message: "Error fetching student users." });
+  }
+};
+
+
+export const getEmployeeUsers = async (req, res) => {
+  try {
+    const employees = await Employee.find();
+    res.json(employees);
+  } catch (error) {
+    console.error("Failed to fetch employees:", error.message);
+    res.status(500).json({ message: "Error fetching employee users." });
+  }
+};

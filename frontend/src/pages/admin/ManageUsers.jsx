@@ -3,18 +3,16 @@ import {
   Box,
   Container,
   Typography,
-  Button,
   Grid,
   Paper,
+  Button,
   useTheme,
 } from "@mui/material";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import GroupsIcon from "@mui/icons-material/Groups";
-import MailIcon from "@mui/icons-material/Mail";
-import AssignmentIcon from "@mui/icons-material/Assignment";
+import PersonIcon from "@mui/icons-material/Person";
+import WorkIcon from "@mui/icons-material/Work";
 import { useNavigate } from "react-router-dom";
 
-const AdminHome = () => {
+const ManageUsers = () => {
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -26,27 +24,28 @@ const AdminHome = () => {
         py: 6,
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="md">
         <Typography
-          variant="h3"
+          variant="h4"
           fontWeight="bold"
           textAlign="center"
-          mb={2}
-          color="text.primary"
+          mb={3}
+          color="primary"
         >
-          Admin Dashboard
+          👥 Manage Users
         </Typography>
+
         <Typography
-          variant="h6"
+          variant="body1"
           color="text.secondary"
           textAlign="center"
           mb={5}
         >
-          Manage your system effectively with quick access panels.
+          View and manage student and employee profiles.
         </Typography>
 
         <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} sm={6}>
             <Paper
               elevation={3}
               sx={{
@@ -60,23 +59,23 @@ const AdminHome = () => {
                 },
               }}
             >
-              <DashboardIcon sx={{ fontSize: 50, color: theme.palette.primary.main }} />
+              <PersonIcon sx={{ fontSize: 50, color: theme.palette.primary.main }} />
               <Typography variant="h5" fontWeight={600} mt={2} mb={1}>
-                Overview Dashboard
+                Students
               </Typography>
               <Typography variant="body2" color="text.secondary" mb={3}>
-                View statistics and overall summaries.
+                Manage student profiles and records.
               </Typography>
               <Button
                 variant="contained"
-                onClick={() => navigate("/admin-dashboard")}
+                onClick={() => navigate("/student-users")}
               >
-                View Dashboard
+                View Student Users
               </Button>
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} sm={6}>
             <Paper
               elevation={3}
               sx={{
@@ -90,58 +89,25 @@ const AdminHome = () => {
                 },
               }}
             >
-              <GroupsIcon sx={{ fontSize: 50, color: "#43a047" }} />
+              <WorkIcon sx={{ fontSize: 50, color: "#43a047" }} />
               <Typography variant="h5" fontWeight={600} mt={2} mb={1}>
-                Manage Users
+                Employees
               </Typography>
               <Typography variant="body2" color="text.secondary" mb={3}>
-                Access student and employee profiles.
+                Manage employee profiles and tasks.
               </Typography>
               <Button
                 variant="outlined"
-                onClick={() => navigate("/manage-users")}
+                onClick={() => navigate("/employee-users")}
               >
-                Go to Users
+                View Employee Users
               </Button>
             </Paper>
           </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={3}
-              sx={{
-                p: 4,
-                borderRadius: 4,
-                textAlign: "center",
-                "&:hover": {
-                  boxShadow: 6,
-                  transform: "translateY(-4px)",
-                  transition: "all 0.3s",
-                },
-              }}
-            >
-              <MailIcon sx={{ fontSize: 50, color: "#fb8c00" }} />
-              <Typography variant="h5" fontWeight={600} mt={2} mb={1}>
-                Contact Messages
-              </Typography>
-              <Typography variant="body2" color="text.secondary" mb={3}>
-                View user inquiries and feedback.
-              </Typography>
-              <Button
-                variant="outlined"
-                onClick={() => navigate("/admin-contact-messages")}
-              >
-                View Messages
-              </Button>
-            </Paper>
-          </Grid>
-
-         
-   
         </Grid>
       </Container>
     </Box>
   );
 };
 
-export default AdminHome;
+export default ManageUsers;
