@@ -60,7 +60,7 @@ const Footer = () => {
         >
           <FooterLink href="/about" icon={<InfoIcon fontSize="small" />} label="About Us" />
           <FooterLink href="/contact" icon={<ContactPageIcon fontSize="small" />} label="Contact" />
-          <FooterLink href="mailto:nickforjobacc@gmail.com" icon={<EmailIcon fontSize="small" />} label="Gmail" />
+          <FooterLink href="https://mail.google.com/mail/?view=cm&to=nickforjobacc@gmail.com" icon={<EmailIcon fontSize="small" />} label="Gmail"/>
           <FooterLink href="https://nikkopaceno.com/ambotoy" icon={<FacebookIcon fontSize="small" />} label="Facebook" />
           <FooterLink href="https://github.com/nikgitofficial" icon={<GitHubIcon fontSize="small" />} label="GitHub" />
         </Stack>
