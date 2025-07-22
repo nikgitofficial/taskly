@@ -93,6 +93,7 @@ const Navbar = () => {
               </Badge>
             ),
           },
+          { to: "/admin-profile", label: "Admin Profile" },
         ]
       : []),
   ];

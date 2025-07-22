@@ -16,6 +16,7 @@ import employeeTaskRoutes from "./routes/employeeTaskRoutes.js";
 import employeeFileRoutes from "./routes/employeeFileRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import contactRoutes from './routes/contactRoutes.js';
+import adminProfileRoutes from "./routes/adminProfileRoutes.js";
 
 
 dotenv.config();
@@ -59,6 +60,7 @@ app.use("/api/employees-profile", employeeProfileRoutes);
 app.use("/api/employee-tasks", employeeTaskRoutes);
 app.use("/api/employee-files", employeeFileRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/profile", adminProfileRoutes);
 app.use('/api/contact', contactRoutes);
 
 app.get("/", (req, res) => {

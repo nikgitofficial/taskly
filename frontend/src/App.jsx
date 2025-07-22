@@ -36,6 +36,7 @@ import AdminContactMessages from "./pages/admin/AdminContactMessages";
 import ManageUsers from "./pages/admin/ManageUsers";
 import StudentUsers from "./pages/admin/StudentUsers";
 import EmployeeUsers from "./pages/admin/EmployeeUsers";
+import AdminProfile from "./pages/admin/AdminProfile";
 
 
 const App = () => {
@@ -76,6 +77,7 @@ const App = () => {
           <Route path="/manage-users" element={<AdminRoute><ManageUsers /></AdminRoute>} />
           <Route path="/student-users" element={<AdminRoute><StudentUsers /></AdminRoute>} />
           <Route path="/employee-users" element={<AdminRoute><EmployeeUsers /></AdminRoute>} />
+          <Route path="/admin-profile" element={<AdminRoute><AdminProfile /></AdminRoute>} />
 
 
           {/* ✅ Public Routes */}
