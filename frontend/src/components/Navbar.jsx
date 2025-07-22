@@ -13,12 +13,14 @@ import {
   CircularProgress,
   Snackbar,
   Fade,
+  Badge,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import MarkunreadIcon from "@mui/icons-material/Markunread";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "../api/axios";
 import logo from "../assets/logo1.png";
 
 const Navbar = () => {
@@ -32,6 +34,25 @@ const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [messageCount, setMessageCount] = useState(0);
+
+  // ✅ Fetch Message Count
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const { data } = await axios.get("/contact/message-count");
+        setMessageCount(data.count);
+      } catch (err) {
+        console.error("❌ Failed to fetch message count:", err);
+      }
+    };
+
+    if (isAdmin) {
+      fetchCount();
+      const interval = setInterval(fetchCount, 60000); // auto-refresh every 60 seconds
+      return () => clearInterval(interval);
+    }
+  }, [isAdmin]);
 
   const open = Boolean(anchorEl);
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
@@ -71,8 +92,16 @@ const Navbar = () => {
           { to: "/admin-dashboard", label: "Admin Dashboard" },
           {
             to: "/admin-contact-messages",
-            label: "Messages",
-            icon: <MarkunreadIcon sx={{ mr: 1 }} />,
+            label: `Messages (${messageCount})`,
+            icon: (
+              <Badge
+                badgeContent={messageCount}
+                color="error"
+                sx={{ mr: 1 }}
+              >
+                <MarkunreadIcon />
+              </Badge>
+            ),
           },
         ]
       : []),
@@ -219,7 +248,9 @@ const Navbar = () => {
                     ))}
                     <MenuItem
                       onClick={handleLogout}
-                      sx={{ "&:hover": { backgroundColor: "#333", color: "#fff" } }}
+                      sx={{
+                        "&:hover": { backgroundColor: "#333", color: "#fff" },
+                      }}
                     >
                       Logout
                     </MenuItem>
@@ -232,7 +263,6 @@ const Navbar = () => {
                       onClick={handleMenuClose}
                       sx={{
                         "&:hover": { backgroundColor: "#333", color: "#fff" },
-                        "&.active": { backgroundColor: "#444" },
                       }}
                     >
                       Login
@@ -243,7 +273,6 @@ const Navbar = () => {
                       onClick={handleMenuClose}
                       sx={{
                         "&:hover": { backgroundColor: "#333", color: "#fff" },
-                        "&.active": { backgroundColor: "#444" },
                       }}
                     >
                       Register
@@ -267,7 +296,6 @@ const Navbar = () => {
   );
 };
 
-// ✅ Updated NavButton to support icon
 const NavButton = ({ to, label, icon }) => (
   <Button
     component={NavLink}

@@ -7,9 +7,11 @@ import {
   Paper,
   Button,
   useTheme,
+  Stack,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import WorkIcon from "@mui/icons-material/Work";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
 
 const ManageUsers = () => {
@@ -25,6 +27,18 @@ const ManageUsers = () => {
       }}
     >
       <Container maxWidth="md">
+
+        {/* ✅ Back to Home Button */}
+        <Stack direction="row" justifyContent="flex-end" mb={2}>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate("/admin-home")}
+          >
+            Back to Admin Home
+          </Button>
+        </Stack>
+
         <Typography
           variant="h4"
           fontWeight="bold"

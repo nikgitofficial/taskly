@@ -1,4 +1,3 @@
-// AdminDashboard.jsx
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import {
@@ -18,6 +17,7 @@ import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import FolderIcon from "@mui/icons-material/Folder";
 import DescriptionIcon from "@mui/icons-material/Description";
 import PersonIcon from "@mui/icons-material/Person";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
@@ -56,6 +56,18 @@ const AdminDashboard = () => {
 
   return (
     <Box p={{ xs: 2, md: 4 }} minHeight="100vh" bgcolor={theme.palette.background.default}>
+      
+      {/* ✅ Back Button */}
+      <Stack direction="row" justifyContent="flex-end" mb={2}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/admin-home")}
+        >
+          Back to Admin Home
+        </Button>
+      </Stack>
+
       <Typography
         variant="h4"
         fontWeight="bold"

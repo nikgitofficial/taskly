@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "../../api/axios";
 import {
   Box, Typography, Paper, CircularProgress, Stack,
-  Avatar, useTheme, Divider, Chip, Tooltip, Fade
+  Avatar, useTheme, Divider, Chip, Tooltip, Fade, Button
 } from "@mui/material";
 import MailIcon from "@mui/icons-material/Mail";
 import EmailIcon from "@mui/icons-material/Email";
 import MessageIcon from "@mui/icons-material/Message";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 const AdminContactMessages = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -37,6 +40,18 @@ const AdminContactMessages = () => {
 
   return (
     <Box p={{ xs: 2, md: 4 }} bgcolor={theme.palette.background.default} minHeight="100vh">
+      
+      {/* ✅ Back Button */}
+      <Stack direction="row" justifyContent="flex-end" mb={2}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/admin-home")}
+        >
+          Back to Admin Home
+        </Button>
+      </Stack>
+
       <Typography
         variant="h4"
         fontWeight="bold"

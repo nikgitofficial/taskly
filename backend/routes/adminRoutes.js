@@ -11,4 +11,6 @@ router.get("/user/:id", verifyToken, verifyAdmin, getUserDetails);
 router.get("/student-users", verifyToken, verifyAdmin, getStudentUsers);
 router.get("/employee-users", verifyToken, verifyAdmin, getEmployeeUsers);
 
+
+
 export default router;
