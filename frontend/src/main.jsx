@@ -2,13 +2,16 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext"; // ✅ Make sure this path is correct
+import { AuthProvider } from "./context/AuthContext";
+import { MessageProvider } from "./context/MessageContext"; 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider> {/* ✅ Wrap App here */}
-        <App />
+      <AuthProvider>
+        <MessageProvider>
+          <App />
+        </MessageProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

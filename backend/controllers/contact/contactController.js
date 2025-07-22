@@ -28,3 +28,12 @@ export const getAllContactMessages = async (req, res) => {
     res.status(500).json({ msg: "Server error fetching messages." });
   }
 };
+
+export const getContactMessageCount = async (req, res) => {
+  try {
+    const count = await ContactMessage.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to get message count" });
+  }
+};

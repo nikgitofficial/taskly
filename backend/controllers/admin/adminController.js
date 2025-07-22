@@ -6,6 +6,7 @@ import StudentFile from "../../models/StudentFile.js";
 import StudentEntry from "../../models/StudentEntry.js";
 import EmployeeFile from "../../models/EmployeeFile.js";
 import EmployeeTask from "../../models/EmployeeTask.js";
+import ContactMessage  from "../../models/ContactMessage.js";
 
 export const getDashboardSummary = async (req, res) => {
   try {
