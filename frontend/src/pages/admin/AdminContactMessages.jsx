@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "../../api/axios";
 import {
   Box, Typography, Paper, CircularProgress, Stack,
-  Avatar, useTheme, Divider, Chip, Tooltip, Fade, Button
+  Avatar, useTheme, Divider, Chip, Fade, Button,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  Snackbar, Alert
 } from "@mui/material";
 import MailIcon from "@mui/icons-material/Mail";
 import EmailIcon from "@mui/icons-material/Email";
@@ -13,6 +15,10 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 const AdminContactMessages = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -30,14 +36,28 @@ const AdminContactMessages = () => {
     fetchMessages();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this message?")) {
-      try {
-        await axios.delete(`/contact/delete/${id}`);
-        setMessages((prev) => prev.filter((msg) => msg._id !== id));
-      } catch (err) {
-        console.error("❌ Failed to delete message:", err);
-      }
+  const openDeleteDialog = (id) => {
+    setSelectedMessageId(id);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedMessageId(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedMessageId) return;
+    setDeleting(true);
+    try {
+      await axios.delete(`/contact/delete/${selectedMessageId}`);
+      setMessages((prev) => prev.filter((msg) => msg._id !== selectedMessageId));
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error("❌ Failed to delete message:", err);
+    } finally {
+      setDeleting(false);
+      handleCloseDialog();
     }
   };
 
@@ -57,8 +77,23 @@ const AdminContactMessages = () => {
         </Button>
       </Stack>
 
-      <Typography variant="h4" fontWeight="bold" mb={3} color="primary.main" textAlign={{ xs: "center", md: "left" }}>
+      <Typography
+        variant="h4"
+        fontWeight="bold"
+        mb={1}
+        color="primary.main"
+        textAlign={{ xs: "center", md: "left" }}
+      >
         📩 Contact Messages
+      </Typography>
+
+      <Typography
+        variant="subtitle1"
+        color="text.secondary"
+        mb={3}
+        textAlign={{ xs: "center", md: "left" }}
+      >
+        Total Messages: {messages.length}
       </Typography>
 
       <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, maxWidth: 1000, mx: "auto" }}>
@@ -107,7 +142,11 @@ const AdminContactMessages = () => {
                     <Typography variant="body2" color="text.primary">{msg.message}</Typography>
                   </Stack>
 
-                  <Button variant="outlined" color="error" onClick={() => handleDelete(msg._id)}>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => openDeleteDialog(msg._id)}
+                  >
                     Delete
                   </Button>
                 </Box>
@@ -116,6 +155,37 @@ const AdminContactMessages = () => {
           </Stack>
         )}
       </Paper>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this message?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} disabled={deleting}>Cancel</Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            variant="contained"
+            color="error"
+            disabled={deleting}
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar Notification */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity="success" variant="filled">
+          Message deleted successfully!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
