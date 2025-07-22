@@ -1,8 +1,8 @@
 import express from 'express';
-import { createContactMessage } from '../controllers/contact/contactController.js';
-
+import { getAllContactMessages } from '../controllers/contact/contactController.js';
 const router = express.Router();
 
-router.post('/', createContactMessage);
+// Admin gets all contact messages
+router.get("/contact-messages", getAllContactMessages);
 
 export default router;

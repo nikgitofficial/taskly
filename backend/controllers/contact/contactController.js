@@ -17,3 +17,14 @@ export const createContactMessage = async (req, res) => {
     res.status(500).json({ msg: "Server error." });
   }
 };
+
+// GET all messages for admin
+export const getAllContactMessages = async (req, res) => {
+  try {
+    const messages = await ContactMessage.find().sort({ createdAt: -1 });
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("❌ Error fetching messages:", error);
+    res.status(500).json({ msg: "Server error fetching messages." });
+  }
+};

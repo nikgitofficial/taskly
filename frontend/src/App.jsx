@@ -32,6 +32,7 @@ import UserDetails from "./pages/admin/UserDetails";
 
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import AdminContactMessages from "./pages/admin/AdminContactMessages";
 
 
 const App = () => {
@@ -68,6 +69,7 @@ const App = () => {
           <Route path="/admin-home" element={<AdminRoute><AdminHome /></AdminRoute>} />
           <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/user/:id" element={<AdminRoute><UserDetails /></AdminRoute>} />
+          <Route path="/admin-contact-messages" element={<AdminRoute><AdminContactMessages /></AdminRoute>} />
 
 
           {/* ✅ Public Routes */}

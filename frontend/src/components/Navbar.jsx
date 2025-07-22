@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import {
   AppBar,
   Toolbar,
@@ -16,6 +15,7 @@ import {
   Fade,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import MarkunreadIcon from "@mui/icons-material/Markunread";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
@@ -49,34 +49,33 @@ const Navbar = () => {
   };
 
   const navItems = [
-   
     ...(isStudent
       ? [
           { to: "/student-home", label: "Home" },
           { to: "/student-entry", label: "Create Entry" },
           { to: "/student-profile", label: "Profile" },
           { to: "/student-dashboard", label: "Dashboard" },
-          { to: "/student-files", label: "Files" }, 
-        ] 
-          : isEmployee
-    ? [
-        { to: "/employee-home", label: "Home" },
-        { to: "/employee-profile", label: "Profile" },
-        { to: "/employee-create-entry", label: "Create Entry" },
-        { to: "/employee-file", label: "Files" },
-        { to: "/employee-dashboard", label: "Dashboard" },
-        
-      ]
-             : isAdmin
-    ? [
-        { to: "/admin-home", label: "Admin  home" },
-        { to: "/admin-dashboard", label: "Admin  Dashboard" },
-  
-        
-      ]
-      
+          { to: "/student-files", label: "Files" },
+        ]
+      : isEmployee
+      ? [
+          { to: "/employee-home", label: "Home" },
+          { to: "/employee-profile", label: "Profile" },
+          { to: "/employee-create-entry", label: "Create Entry" },
+          { to: "/employee-file", label: "Files" },
+          { to: "/employee-dashboard", label: "Dashboard" },
+        ]
+      : isAdmin
+      ? [
+          { to: "/admin-home", label: "Admin Home" },
+          { to: "/admin-dashboard", label: "Admin Dashboard" },
+          {
+            to: "/admin-contact-messages",
+            label: "Messages",
+            icon: <MarkunreadIcon sx={{ mr: 1 }} />,
+          },
+        ]
       : []),
-      
   ];
 
   if (logoutLoading) {
@@ -148,7 +147,12 @@ const Navbar = () => {
               {user ? (
                 <>
                   {navItems.map((item) => (
-                    <NavButton key={item.to} to={item.to} label={item.label} />
+                    <NavButton
+                      key={item.to}
+                      to={item.to}
+                      label={item.label}
+                      icon={item.icon}
+                    />
                   ))}
                   <Button
                     onClick={handleLogout}
@@ -205,6 +209,11 @@ const Navbar = () => {
                           "&.active": { backgroundColor: "#444" },
                         }}
                       >
+                        {item.icon && (
+                          <Box component="span" sx={{ mr: 1 }}>
+                            {item.icon}
+                          </Box>
+                        )}
                         {item.label}
                       </MenuItem>
                     ))}
@@ -258,8 +267,8 @@ const Navbar = () => {
   );
 };
 
-// Desktop Nav Button
-const NavButton = ({ to, label }) => (
+// ✅ Updated NavButton to support icon
+const NavButton = ({ to, label, icon }) => (
   <Button
     component={NavLink}
     to={to}
@@ -276,6 +285,7 @@ const NavButton = ({ to, label }) => (
       },
     })}
   >
+    {icon && <Box component="span" sx={{ mr: 1 }}>{icon}</Box>}
     {label}
   </Button>
 );
