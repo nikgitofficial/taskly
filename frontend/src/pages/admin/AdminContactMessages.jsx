@@ -16,7 +16,7 @@ const AdminContactMessages = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const res = await axios.get("/admin/contact-messages");
+        const res = await axios.get("/contact/contact-messages");
         setMessages(res.data);
       } catch (err) {
         console.error("❌ Failed to fetch messages:", err);
