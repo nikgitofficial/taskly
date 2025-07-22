@@ -28,6 +28,8 @@ import EmployeeDashboard from "./pages/employee/EmployeeDashboard"
 
 import AdminHome from "./pages/admin/AdminHome";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserDetails from "./pages/admin/UserDetails";
+
 
 const App = () => {
   return (
@@ -57,6 +59,8 @@ const App = () => {
           {/* ✅ Admin Routes */}
           <Route path="/admin-home" element={<AdminRoute><AdminHome /></AdminRoute>} />
           <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/user/:id" element={<AdminRoute><UserDetails /></AdminRoute>} />
+
 
           {/* ✅ Public Routes */}
           <Route path="/login" element={<Login />} />
