@@ -4,6 +4,8 @@ import Student from "../../models/Student.js";
 import Employee from "../../models/Employee.js";
 import StudentFile from "../../models/StudentFile.js";
 import StudentEntry from "../../models/StudentEntry.js";
+import EmployeeTask from "../../models/EmployeeTask.js";
+import EmployeeFile from "../../models/EmployeeFile.js";
 
 export const getDashboardSummary = async (req, res) => {
   try {
@@ -11,6 +13,7 @@ export const getDashboardSummary = async (req, res) => {
 
     const data = await Promise.all(users.map(async (user) => {
       let name = "Unnamed User";
+
       if (user.role === "student") {
         const student = await Student.findOne({ userId: user._id });
         if (student?.name) name = student.name;
@@ -19,8 +22,21 @@ export const getDashboardSummary = async (req, res) => {
         if (employee?.name) name = employee.name;
       }
 
-      const fileCount = await StudentFile.countDocuments({ userId: user._id });
-      const entryCount = await StudentEntry.countDocuments({ userId: user._id });
+      // ✅ Files count based on role
+      let fileCount = 0;
+      if (user.role === "student") {
+        fileCount = await StudentFile.countDocuments({ userId: user._id });
+      } else if (user.role === "employee") {
+        fileCount = await EmployeeFile.countDocuments({ userId: user._id });
+      }
+
+      // ✅ Entries/Tasks count based on role
+      let entryCount = 0;
+      if (user.role === "student") {
+        entryCount = await StudentEntry.countDocuments({ userId: user._id });
+      } else if (user.role === "employee") {
+        entryCount = await EmployeeTask.countDocuments({ createdBy: user._id });
+      }
 
       return {
         userId: user._id,
@@ -28,7 +44,7 @@ export const getDashboardSummary = async (req, res) => {
         email: user.email,
         role: user.role,
         fileCount,
-        entryCount
+        entryCount,
       };
     }));
 
@@ -38,6 +54,7 @@ export const getDashboardSummary = async (req, res) => {
     res.status(500).json({ message: "Failed to load dashboard data" });
   }
 };
+   
 
 export const getUserDetails = async (req, res) => {
   const { id } = req.params;
@@ -64,4 +81,3 @@ export const getUserDetails = async (req, res) => {
 
   return res.json({ ...user.toObject(), name, ...profile });
 };
-
