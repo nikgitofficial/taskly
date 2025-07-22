@@ -30,16 +30,21 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
-      console.log("✅ CORS allowed:", origin);
-      callback(null, true);
-    } else {
-      console.warn("❌ CORS blocked:", origin);
-      callback(new Error("Not allowed by CORS"));
+    // Allow healthchecks and internal calls without origin
+    if (!origin) return callback(null, true);
+
+    const cleanedOrigin = origin.replace(/\/$/, "");
+    if (allowedOrigins.includes(cleanedOrigin)) {
+      console.log(`✅ [CORS] Allowed: ${cleanedOrigin}`);
+      return callback(null, true);
     }
+
+    console.warn(`❌ [CORS] Blocked: ${cleanedOrigin}`);
+    return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
