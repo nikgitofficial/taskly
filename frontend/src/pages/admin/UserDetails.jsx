@@ -25,45 +25,81 @@ const UserDetails = () => {
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-      <CircularProgress />
+      <CircularProgress size={60} />
     </Box>
   );
 
-  if (!user) return <Typography>User not found.</Typography>;
+  if (!user) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+      <Typography variant="h6" color="error">User not found.</Typography>
+    </Box>
+  );
 
   return (
-    <Box p={3} display="flex" justifyContent="center">
-      <Paper sx={{ p: 3, maxWidth: 600, width: "100%" }}>
-        <Box display="flex" flexDirection="column" alignItems="center">
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh" p={2}>
+      <Paper
+        elevation={6}
+        sx={{
+          p: 4,
+          maxWidth: 600,
+          width: "100%",
+          borderRadius: 4,
+          bgcolor: "background.paper"
+        }}
+      >
+        <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
           <Avatar
             src={user.profilePic || ""}
-            sx={{ width: 100, height: 100, mb: 2, bgcolor: "primary.main" }}
+            sx={{
+              width: 120,
+              height: 120,
+              mb: 2,
+              fontSize: 40,
+              bgcolor: "primary.main",
+              boxShadow: 3,
+            }}
           >
             {!user.profilePic && (user.name?.charAt(0).toUpperCase() || "U")}
           </Avatar>
 
-          <Typography variant="h5" fontWeight="bold">{user.name || "Unnamed User"}</Typography>
-          <Typography variant="body1" color="text.secondary">{user.email}</Typography>
-          <Typography variant="caption" color="text.secondary">{user.role?.toUpperCase()}</Typography>
+          <Typography variant="h4" fontWeight={700}>
+            {user.name || "Unnamed User"}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {user.email}
+          </Typography>
+          <Typography
+            variant="caption"
+            color="primary.main"
+            sx={{
+              background: "rgba(25, 118, 210, 0.1)",
+              px: 1.5,
+              py: 0.5,
+              borderRadius: 2,
+              mt: 1
+            }}
+          >
+            {user.role?.toUpperCase()}
+          </Typography>
         </Box>
 
-        <Divider sx={{ my: 2 }} />
+        <Divider sx={{ my: 3 }} />
 
-        <Stack spacing={1}>
+        <Stack spacing={2}>
           {user.role === "student" && (
             <>
-              <Typography>🎓 Course: {user.course || "N/A"}</Typography>
-              <Typography>📚 Year Level: {user.yearLevel || "N/A"}</Typography>
+              <Typography variant="subtitle1">🎓 <b>Course:</b> {user.course || "N/A"}</Typography>
+              <Typography variant="subtitle1">📚 <b>Year Level:</b> {user.yearLevel || "N/A"}</Typography>
             </>
           )}
           {user.role === "employee" && (
             <>
-              <Typography>🏢 Department: {user.department || "N/A"}</Typography>
-              <Typography>💼 Position: {user.position || "N/A"}</Typography>
+              <Typography variant="subtitle1">🏢 <b>Department:</b> {user.department || "N/A"}</Typography>
+              <Typography variant="subtitle1">💼 <b>Position:</b> {user.position || "N/A"}</Typography>
             </>
           )}
           {user.role === "admin" && (
-            <Typography>👑 Admin account - no additional profile details.</Typography>
+            <Typography variant="subtitle1">👑 <b>Admin account:</b> No additional details.</Typography>
           )}
         </Stack>
       </Paper>

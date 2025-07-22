@@ -19,7 +19,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo1.png";
 
 const Navbar = () => {
   const { user, logout } = useAuth();

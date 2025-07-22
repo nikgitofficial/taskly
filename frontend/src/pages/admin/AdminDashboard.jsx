@@ -6,10 +6,10 @@ import {
   Paper,
   CircularProgress,
   Stack,
-  Divider,
   Avatar,
   useTheme,
   Button,
+  Divider,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import FolderIcon from "@mui/icons-material/Folder";
@@ -80,59 +80,71 @@ const AdminDashboard = () => {
             No user data found.
           </Typography>
         ) : (
-          <Stack spacing={3}>
-            {summary.map((user) => (
-              <Box key={user.userId}>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center" flexWrap="wrap">
-                  <Avatar
-                    sx={{
-                      width: 60,
-                      height: 60,
-                      background: "linear-gradient(135deg, #2196f3, #21cbf3)",
-                    }}
-                  >
-                    <PersonIcon fontSize="large" />
-                  </Avatar>
+          <Box
+            sx={{
+              maxHeight: "1000px",
+              overflowY: "auto",
+              pr: 1,
+            }}
+          >
+            <Stack spacing={3}>
+              {summary.map((user) => (
+                <Box
+                  key={user.userId}
+                  sx={{
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 3,
+                    p: 2,
+                    backgroundColor: "#f9f9f9",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                    <Avatar
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        background: "linear-gradient(135deg, #2196f3, #21cbf3)",
+                      }}
+                    >
+                      <PersonIcon fontSize="large" />
+                    </Avatar>
 
-                  <Box>
-                 <Typography variant="subtitle1" fontWeight={600}>
-                  {user.name}
-                  </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {user.email || "No email available"}
-                    </Typography>
-                  </Box>
-                </Stack>
+                    <Box flexGrow={1}>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {user.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {user.email || "No email available"}
+                      </Typography>
+                    </Box>
 
-                <Box mt={2} ml={{ xs: 0, sm: 8 }}>
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={3}>
-                    <StatBox icon={<FolderIcon color="success" />} label="Files" value={user.fileCount} />
-                    <StatBox icon={<DescriptionIcon color="primary" />} label="Entries" value={user.entryCount} />
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => navigate(`/admin/user/${user.userId}`)}
+                    >
+                      View Details
+                    </Button>
                   </Stack>
+
+                  <Box mt={2}>
+                    <Stack direction="row" spacing={3} flexWrap="wrap">
+                      <StatBox icon={<FolderIcon color="success" />} label="Files" value={user.fileCount} />
+                      <StatBox icon={<DescriptionIcon color="primary" />} label="Entries" value={user.entryCount} />
+                    </Stack>
+                  </Box>
                 </Box>
-
-                <Box mt={2} ml={{ xs: 0, sm: 8 }}>
-                  <Button
-  variant="contained"
-  size="small"
-  onClick={() => navigate(`/admin/user/${user.userId}`)}
->
-  View Details
-</Button>
-
-                </Box>
-
-                <Divider sx={{ my: 3 }} />
-              </Box>
-            ))}
-          </Stack>
+              ))}
+            </Stack>
+          </Box>
         )}
       </Paper>
     </Box>
   );
 };
 
-// ✅ Clean StatBox Component
+// ✅ StatBox Component
 const StatBox = ({ icon, label, value }) => (
   <Stack direction="row" spacing={1} alignItems="center">
     {icon}

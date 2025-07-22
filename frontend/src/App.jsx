@@ -30,6 +30,9 @@ import AdminHome from "./pages/admin/AdminHome";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserDetails from "./pages/admin/UserDetails";
 
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+
 
 const App = () => {
   return (
@@ -40,6 +43,11 @@ const App = () => {
 
           {/* ✅ Private Home Route */}
           <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+
+            {/* ✅ NonPrivate Home Route */}
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          
 
           {/* ✅ Student Routes */}
           <Route path="/student-home" element={<StudentRoute><StudentHome /></StudentRoute>} />
