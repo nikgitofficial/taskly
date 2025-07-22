@@ -7,7 +7,6 @@ import StudentEntry from "../../models/StudentEntry.js";
 import EmployeeFile from "../../models/EmployeeFile.js";
 import EmployeeTask from "../../models/EmployeeTask.js";
 
-
 export const getDashboardSummary = async (req, res) => {
   try {
     const users = await User.find({}, "_id email role");
@@ -23,7 +22,6 @@ export const getDashboardSummary = async (req, res) => {
         if (employee?.name) name = employee.name;
       }
 
-      // ✅ Files count based on role
       let fileCount = 0;
       if (user.role === "student") {
         fileCount = await StudentFile.countDocuments({ userId: user._id });
@@ -31,7 +29,6 @@ export const getDashboardSummary = async (req, res) => {
         fileCount = await EmployeeFile.countDocuments({ userId: user._id });
       }
 
-      // ✅ Entries/Tasks count based on role
       let entryCount = 0;
       if (user.role === "student") {
         entryCount = await StudentEntry.countDocuments({ userId: user._id });
@@ -49,13 +46,27 @@ export const getDashboardSummary = async (req, res) => {
       };
     }));
 
-    res.json(data);
+    const totalUsers = await User.countDocuments();
+    const totalStudentFiles = await StudentFile.countDocuments();
+    const totalEmployeeFiles = await EmployeeFile.countDocuments();
+    const totalFiles = totalStudentFiles + totalEmployeeFiles;
+
+    const totalStudentEntries = await StudentEntry.countDocuments();
+    const totalEmployeeTasks = await EmployeeTask.countDocuments();
+    const totalEntries = totalStudentEntries + totalEmployeeTasks;
+
+    res.json({
+      users: data,
+      totalUsers,
+      totalFiles,
+      totalEntries,
+    });
   } catch (err) {
     console.error("❌ Admin Dashboard Error:", err);
     res.status(500).json({ message: "Failed to load dashboard data" });
   }
 };
-   
+
 
 export const getUserDetails = async (req, res) => {
   const { id } = req.params;
