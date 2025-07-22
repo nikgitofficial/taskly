@@ -40,7 +40,7 @@ import EmployeeUsers from "./pages/admin/EmployeeUsers";
 
 const App = () => {
   return (
-    <Box display="flex" flexDirection="column" minHeight="100vh" width="100vw" overflow="hidden">
+    <Box display="flex" flexDirection="column" minHeight="100vh" width="100%" overflow="hidden">
       <Navbar />
       <Box component="main" flexGrow={1} mt="64px" mb="60px" px={2}>
         <Routes>

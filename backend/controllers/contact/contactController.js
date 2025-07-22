@@ -1,3 +1,4 @@
+// controllers/contact/contactController.js
 import ContactMessage from '../../models/ContactMessage.js';
 
 export const createContactMessage = async (req, res) => {
@@ -18,10 +19,13 @@ export const createContactMessage = async (req, res) => {
   }
 };
 
-// GET all messages for admin
+// ✅ Updated: mark all unread as read after fetching
 export const getAllContactMessages = async (req, res) => {
   try {
     const messages = await ContactMessage.find().sort({ createdAt: -1 });
+
+    await ContactMessage.updateMany({ isRead: false }, { isRead: true });
+
     res.status(200).json(messages);
   } catch (error) {
     console.error("❌ Error fetching messages:", error);
@@ -29,9 +33,10 @@ export const getAllContactMessages = async (req, res) => {
   }
 };
 
+// ✅ Only count unread messages
 export const getContactMessageCount = async (req, res) => {
   try {
-    const count = await ContactMessage.countDocuments();
+    const count = await ContactMessage.countDocuments({ isRead: false });
     res.json({ count });
   } catch (err) {
     res.status(500).json({ message: "Failed to get message count" });
