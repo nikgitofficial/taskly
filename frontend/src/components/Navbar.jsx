@@ -12,7 +12,7 @@ import axios from "../api/axios";
 import logo from "../assets/logo1.png";
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, student, employee, admin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isStudent = user?.role === "student";
@@ -98,6 +98,13 @@ const Navbar = () => {
       : []),
   ];
 
+  // Determine which profile pic to show
+  const profilePic =
+    user?.role === "student" ? student?.profilePic :
+    user?.role === "employee" ? employee?.profilePic :
+    user?.role === "admin" ? admin?.profilePic :
+    null;
+
   if (logoutLoading) {
     return (
       <Fade in={logoutLoading}>
@@ -162,6 +169,17 @@ const Navbar = () => {
             <Stack direction="row" spacing={1.5} alignItems="center">
               {user ? (
                 <>
+                  {/* Profile pic avatar */}
+                  {profilePic && (
+                    <Avatar
+                      src={profilePic}
+                      alt="Profile Pic"
+                      sx={{ width: 36, height: 36, mr: 1 }}
+                    >
+                      {!profilePic && user?.name?.[0]?.toUpperCase()}
+                    </Avatar>
+                  )}
+
                   {navItems.map((item) => (
                     <NavButton key={item.to} to={item.to} label={item.label} icon={item.icon} />
                   ))}
@@ -209,6 +227,25 @@ const Navbar = () => {
               >
                 {user ? (
                   <>
+                    {/* Show avatar at top of mobile menu */}
+                    {profilePic && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          mb: 1,
+                        }}
+                      >
+                        <Avatar
+                          src={profilePic}
+                          alt="Profile Pic"
+                          sx={{ width: 60, height: 60 }}
+                        >
+                          {!profilePic && user?.name?.[0]?.toUpperCase()}
+                        </Avatar>
+                      </Box>
+                    )}
+
                     {navItems.map((item) => (
                       <MenuItem
                         key={item.to}
