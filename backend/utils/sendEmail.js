@@ -1,42 +1,39 @@
-// utils/sendEmail.js
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
 
-const sendEmail = async (to, subject, text) => {
-  // Create transporter with explicit SMTP settings
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,                  // use TLS
-    auth: {
-      user: process.env.OTP_EMAIL, // your Gmail address
-      pass: process.env.OTP_APP_PASSWORD,  // your Gmail app password
-    }
-  });
+dotenv.config();
 
-  // Verify connection configuration
-  try {
-    await transporter.verify();
-    console.log("✔️ SMTP connection successful");
-  } catch (err) {
-    console.error("❌ SMTP connection failed:", err);
-    throw new Error("Email service configuration error");
-  }
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL,
+    pass: process.env.PASSWORD,
+  },
+});
 
-  // Mail options
+/**
+ * Send email with both plain text and styled HTML.
+ *
+ * @param {string} to - Recipient email
+ * @param {string} subject - Subject of the email
+ * @param {string} text - Fallback text message
+ * @param {string} html - Optional HTML message
+ */
+const sendEmail = async (to, subject, text, html) => {
   const mailOptions = {
-    from: `"Taskly App" <${process.env.EMAIL_USER}>`,
+    from: `"Taskly Support" <${process.env.EMAIL}>`,
     to,
     subject,
-    text
+    text,
+    html: html || text,
   };
 
-  // Send mail
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log("📧 Email sent:", info.messageId);
-  } catch (err) {
-    console.error("❌ sendMail error:", err);
-    throw new Error("Failed to send email");
+    console.log("Email sent:", info.response);
+  } catch (error) {
+    console.error("Failed to send email:", error);
+    throw error;
   }
 };
 
