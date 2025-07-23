@@ -106,9 +106,7 @@ const EmployeeDashboard = () => {
             👋 Welcome Back, {employee?.name || user?.name || "Employee"}
           </Typography>
 
-          <Typography variant="body2" align="center" color="text.secondary" gutterBottom>
-            Current UTC Time: {apiDate ? new Date(apiDate).toUTCString() : "Loading..."}
-          </Typography>
+         
 
           {/* Profile Card with transparent background */}
           <Card sx={{

@@ -40,6 +40,8 @@ const EmployeeTaskManager = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [dateError, setDateError] = useState(false);
+  const [dateErrorDialogOpen, setDateErrorDialogOpen] = useState(false);
 
   useEffect(() => { fetchEntries(); }, []);
   useEffect(() => { filterData(); }, [entries, search, filterCategory]);
@@ -71,31 +73,47 @@ const EmployeeTaskManager = () => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
-
+ 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    const token = localStorage.getItem("token");
-    try {
-      const payload = { ...form };
-      if (editingId) {
-        await axios.put(`/employee-tasks/${editingId}`, payload, { headers: { Authorization: `Bearer ${token}` } });
-        setSnackMsg("Task updated successfully!");
-      } else {
-        await axios.post("/employee-tasks", payload, { headers: { Authorization: `Bearer ${token}` } });
-        setSnackMsg("Task created successfully!");
-      }
-      fetchEntries();
-      handleClose();
-      setSnackOpen(true);
-    } catch (err) {
-      console.error("❌ Failed to submit:", err);
-      setSnackMsg("❌ Failed to submit task");
-      setSnackOpen(true);
-    } finally {
-      setSubmitting(false);
+  e.preventDefault();
+
+  const today = new Date().toISOString().split("T")[0];
+  if (form.date < today) {
+    setDateErrorDialogOpen(true); // open the modal
+    return;
+  }
+
+  setSubmitting(true);
+  const token = localStorage.getItem("token");
+
+  try {
+    const payload = { ...form };
+    if (editingId) {
+      await axios.put(`/employee-tasks/${editingId}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackMsg("✅ Task updated successfully!");
+    } else {
+      await axios.post("/employee-tasks", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackMsg("✅ Task created successfully!");
     }
-  };
+
+    fetchEntries();
+    handleClose();
+    setSnackOpen(true);
+  } catch (err) {
+    console.error("❌ Failed to submit:", err);
+    setSnackMsg("❌ Failed to submit task");
+    setSnackOpen(true);
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+
+
 
   const handleEdit = (entry) => {
     setForm({
@@ -321,7 +339,18 @@ const EmployeeTaskManager = () => {
           <TextField label="Category" name="category" value={form.category} onChange={handleChange} select fullWidth margin="dense" required>
             {categories.slice(1).map(cat => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
           </TextField>
-          <TextField label="Due Date" name="date" type="date" value={form.date} onChange={handleChange} fullWidth margin="dense" InputLabelProps={{ shrink: true }} required />
+          <TextField
+  label="Date"
+  type="date"
+  fullWidth
+  value={form.date}
+  onChange={(e) => setForm({ ...form, date: e.target.value })}
+  InputLabelProps={{ shrink: true }}
+  inputProps={{ min: new Date().toISOString().split("T")[0] }}
+  error={dateError}
+  helperText={dateError ? "Date cannot be in the past." : ""}
+/>
+
           <TextField label="Status" name="status" value={form.status} onChange={handleChange} select fullWidth margin="dense" required>
             {statuses.map(status => <MenuItem key={status} value={status}>{status}</MenuItem>)}
           </TextField>
@@ -354,6 +383,20 @@ const EmployeeTaskManager = () => {
           {snackMsg}
         </Alert>
       </Snackbar>
+         {/* Invalid Date Dialog */}
+    <Dialog open={dateErrorDialogOpen} onClose={() => setDateErrorDialogOpen(false)}>
+      <DialogTitle>Invalid Date</DialogTitle>
+      <DialogContent>
+        <Typography>
+          The due date cannot be earlier than today's date. Please select a valid future date.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setDateErrorDialogOpen(false)} autoFocus>
+          OK
+        </Button>
+      </DialogActions>
+    </Dialog>
     </Box>
   );
 };

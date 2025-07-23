@@ -64,6 +64,7 @@ const StudentEntry = () => {
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
+  const [dateErrorDialogOpen, setDateErrorDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchEntries();
@@ -105,42 +106,48 @@ const StudentEntry = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { title, description, category, date } = form;
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  const { title, description, category, date } = form;
 
-    if (!title || !description || !category || !date) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-
-    setSubmitting(true);
-const token = localStorage.getItem("token");
-const data = { title, description, category, date };
-
-try {
-  const config = { headers: { Authorization: `Bearer ${token}` } };
-
-  if (editingId) {
-    await axios.put(`/student-entries/${editingId}`, data, config);
-    setSnackMsg("Entry updated successfully!");
-  } else {
-    await axios.post("/student-entries", data, config);
-    setSnackMsg("Entry created successfully!");
+  if (!title || !description || !category || !date) {
+    alert("Please fill in all required fields.");
+    return;
   }
 
-  handleClose();
-  setLoading(true); // ✅ add this
-  await fetchEntries();
-  setSnackOpen(true);
-} catch (error) {
-  console.error("❌ Error submitting form:", error?.response?.data || error.message);
-  alert("Failed to submit entry");
-} finally {
-  setSubmitting(false);
-}
+  // ✅ Check if date is in the past
+  const today = new Date().toISOString().split("T")[0];
+  if (date < today) {
+    setDateErrorDialogOpen(true); // show modal
+    return;
+  }
 
-  };
+  setSubmitting(true);
+  const token = localStorage.getItem("token");
+  const data = { title, description, category, date };
+
+  try {
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+
+    if (editingId) {
+      await axios.put(`/student-entries/${editingId}`, data, config);
+      setSnackMsg("Entry updated successfully!");
+    } else {
+      await axios.post("/student-entries", data, config);
+      setSnackMsg("Entry created successfully!");
+    }
+
+    handleClose();
+    setLoading(true);
+    await fetchEntries();
+    setSnackOpen(true);
+  } catch (error) {
+    console.error("❌ Error submitting form:", error?.response?.data || error.message);
+    alert("Failed to submit entry");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
  
 const handleToggleDone = async (entry) => {
@@ -468,6 +475,20 @@ const exportToPDF = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* Invalid Date Dialog */}
+<Dialog open={dateErrorDialogOpen} onClose={() => setDateErrorDialogOpen(false)}>
+  <DialogTitle>Invalid Date</DialogTitle>
+  <DialogContent>
+    <Typography>
+      The due date cannot be earlier than today's date. Please select a valid future date.
+    </Typography>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setDateErrorDialogOpen(false)} autoFocus>
+      OK
+    </Button>
+  </DialogActions>
+</Dialog>
     </Box>
   );
 };

@@ -49,7 +49,7 @@ const EmployeeHome = () => {
       title: "Create Entry",
       description: "Submit your daily work logs easily.",
       bgColor: "linear-gradient(135deg, #4FC3F7, #1976D2)",
-      action: () => navigate("/employee-entry"),
+      action: () => navigate("/employee-create-entry"),
     },
     {
       icon: <AccountCircle sx={{ fontSize: 40, color: "#ffffff" }} />,
@@ -70,7 +70,7 @@ const EmployeeHome = () => {
       title: "My Files",
       description: "Manage and access your uploaded documents.",
       bgColor: "linear-gradient(135deg, #BA68C8, #8E24AA)",
-      action: () => navigate("/employee-files"),
+      action: () => navigate("/employee-file"),
     },
   ];
 
