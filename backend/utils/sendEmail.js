@@ -1,43 +1,35 @@
 // utils/sendEmail.js
 import nodemailer from "nodemailer";
 
-const sendEmail = async (to, subject, text) => {
-  // Create transporter with explicit SMTP settings
+const sendEmail = async (to, subject, otp) => {
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,                  // use TLS
+    service: "gmail",
     auth: {
-      user: process.env.OTP_EMAIL, // your Gmail address
-      pass: process.env.OTP_APP_PASSWORD,  // your Gmail app password
-    }
+      user: process.env.OTP_EMAIL,
+      pass: process.env.OTP_APP_PASSWORD,
+    },
   });
 
-  // Verify connection configuration
-  try {
-    await transporter.verify();
-    console.log("✔️ SMTP connection successful");
-  } catch (err) {
-    console.error("❌ SMTP connection failed:", err);
-    throw new Error("Email service configuration error");
-  }
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+      <h2 style="color: #2e7d32;">🔐 Taskly Password Reset</h2>
+      <p>Hello,</p>
+      <p>You recently requested to reset your password. Please use the OTP below to proceed:</p>
+      <div style="margin: 20px 0; text-align: center;">
+        <span style="font-size: 24px; font-weight: bold; color: #1a237e; letter-spacing: 4px;">${otp}</span>
+      </div>
+      <p>This OTP is valid for a limited time. If you didn't request a password reset, you can safely ignore this email.</p>
+      <br>
+      <p style="font-size: 14px; color: #555;">— Taskly Team</p>
+    </div>
+  `;
 
-  // Mail options
-  const mailOptions = {
-    from: `"Taskly App" <${process.env.EMAIL_USER}>`,
+  await transporter.sendMail({
+    from: `"Taskly Support" <${process.env.OTP_EMAIL}>`,
     to,
     subject,
-    text
-  };
-
-  // Send mail
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("📧 Email sent:", info.messageId);
-  } catch (err) {
-    console.error("❌ sendMail error:", err);
-    throw new Error("Failed to send email");
-  }
+    html: htmlContent,
+  });
 };
 
 export default sendEmail;
