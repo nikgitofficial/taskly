@@ -1,6 +1,5 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Box } from "@mui/material";
-
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
@@ -41,20 +40,21 @@ import AdminProfile from "./pages/admin/AdminProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 
 
+
 const App = () => {
   return (
     <Box display="flex" flexDirection="column" minHeight="100vh" width="100%" overflow="hidden">
       <Navbar />
       <Box component="main" flexGrow={1} mt="64px" mb="60px" px={2}>
         <Routes>
-
+          <Route path="/" element={<Navigate to="/about" replace />} />
           {/* ✅ Private Home Route */}
-          <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+          <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
 
             {/* ✅ public Route */}
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+         
           
 
           {/* ✅ Student Routes */}

@@ -1,75 +1,259 @@
-// pages/ForgotPassword.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Box, TextField, Button, Typography, Snackbar, Alert
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Snackbar,
+  Alert,
+  Card,
+  CardContent,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
 } from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import axios from "../api/axios";
+import zxcvbn from "zxcvbn"; // ✅ Password strength library
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
+  const [countdown, setCountdown] = useState(0);
 
-  const sendOtpHandler = async () => {
+  const handleSnackbarClose = () =>
+    setSnackbar({ ...snackbar, open: false });
+
+  const sendOTP = async () => {
     try {
-      await axios.post("/auth/forgot-password", { email });
-      setOtpSent(true);
-      setMsg("OTP sent to email");
+      if (countdown > 0) return;
+      const res = await axios.post("/auth/forgot-password", { email });
+      setSnackbar({
+        open: true,
+        message: res.data.message,
+        severity: "success",
+      });
+      setStep(2);
+      setCountdown(60);
     } catch (err) {
-      setError(err.response?.data?.message || "Error sending OTP");
+      setSnackbar({
+        open: true,
+        message: err?.response?.data?.message || "Failed to send OTP",
+        severity: "error",
+      });
     }
   };
 
-  const resetPasswordHandler = async () => {
+  const resetPassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setSnackbar({
+        open: true,
+        message: "Passwords do not match",
+        severity: "error",
+      });
+      return;
+    }
+
     try {
-      await axios.post("/auth/reset-password", { email, otp, newPassword });
-      setMsg("Password reset successful!");
-      setOtpSent(false);
+      const res = await axios.post("/auth/reset-password", {
+        email,
+        otp,
+        newPassword,
+      });
+      setSnackbar({
+        open: true,
+        message: res.data.message,
+        severity: "success",
+      });
+      setStep(1);
+      setEmail("");
+      setOtp("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || "Error resetting password");
+      const message =
+        err?.response?.data?.message || "Failed to reset password";
+      const isOtpError = message.toLowerCase().includes("otp");
+      setSnackbar({
+        open: true,
+        message: isOtpError ? "Invalid OTP. Please try again." : message,
+        severity: "error",
+      });
     }
   };
+
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  const strength = zxcvbn(newPassword);
+  const strengthScore = strength.score * 25;
+  const strengthLabel = ["Too Weak", "Weak", "Fair", "Good", "Strong"][strength.score];
+
+  const isPasswordMatch =
+    newPassword && confirmPassword && newPassword === confirmPassword;
 
   return (
-    <Box maxWidth={400} mx="auto" mt={10} p={4} boxShadow={3} borderRadius={2}>
-      <Typography variant="h5" mb={2}>Forgot Password</Typography>
+    <Container maxWidth="sm">
+      <Card elevation={3} sx={{ mt: 6, p: 2 }}>
+        <CardContent>
+          <Typography variant="h5" fontWeight={600} gutterBottom>
+            Forgot Password
+          </Typography>
 
-      <TextField
-        fullWidth label="Email" margin="normal"
-        value={email} onChange={(e) => setEmail(e.target.value)}
-      />
+          {step === 1 && (
+            <>
+              <TextField
+                label="Email Address"
+                fullWidth
+                type="email"
+                margin="normal"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={sendOTP}
+                disabled={!email || countdown > 0}
+              >
+                {countdown > 0
+                  ? `Resend OTP in ${countdown}s`
+                  : "Send OTP"}
+              </Button>
+            </>
+          )}
 
-      {otpSent && (
-        <>
-          <TextField
-            fullWidth label="OTP" margin="normal"
-            value={otp} onChange={(e) => setOtp(e.target.value)}
-          />
-          <TextField
-            fullWidth label="New Password" type="password" margin="normal"
-            value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-          />
-        </>
-      )}
+          {step === 2 && (
+            <>
+              <TextField
+                label="OTP Code"
+                fullWidth
+                margin="normal"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+              />
+              <TextField
+                label="New Password"
+                fullWidth
+                margin="normal"
+                type={showPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() =>
+                          setShowPassword((prev) => !prev)
+                        }
+                      >
+                        {showPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              {newPassword && (
+                <Box mb={1}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={strengthScore}
+                    sx={{ height: 8, borderRadius: 5 }}
+                    color={
+                      strength.score < 2
+                        ? "error"
+                        : strength.score < 3
+                        ? "warning"
+                        : "success"
+                    }
+                  />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    mt={1}
+                  >
+                    Strength: {strengthLabel}
+                  </Typography>
+                </Box>
+              )}
 
-      <Button
-        fullWidth variant="contained" sx={{ mt: 2 }}
-        onClick={otpSent ? resetPasswordHandler : sendOtpHandler}
+              <TextField
+                label="Confirm Password"
+                fullWidth
+                margin="normal"
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              {!isPasswordMatch && confirmPassword && (
+                <Typography variant="caption" color="error">
+                  Passwords do not match
+                </Typography>
+              )}
+
+              <Box mt={2}>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={resetPassword}
+                  disabled={
+                    !otp ||
+                    !newPassword ||
+                    !confirmPassword ||
+                    !isPasswordMatch
+                  }
+                >
+                  Reset Password
+                </Button>
+              </Box>
+              <Button onClick={() => setStep(1)} sx={{ mt: 1 }}>
+                Back
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }} // ✅ Center top
       >
-        {otpSent ? "Reset Password" : "Send OTP"}
-      </Button>
-
-      <Snackbar open={!!msg} autoHideDuration={4000} onClose={() => setMsg("")}>
-        <Alert onClose={() => setMsg("")} severity="success">{msg}</Alert>
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={handleSnackbarClose}
+        >
+          {snackbar.message}
+        </Alert>
       </Snackbar>
-
-      <Snackbar open={!!error} autoHideDuration={4000} onClose={() => setError("")}>
-        <Alert onClose={() => setError("")} severity="error">{error}</Alert>
-      </Snackbar>
-    </Box>
+    </Container>
   );
 };
 

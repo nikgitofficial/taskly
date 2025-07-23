@@ -16,7 +16,10 @@ import {
   useTheme,
   CircularProgress,
   LinearProgress,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -25,6 +28,9 @@ const Register = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
   const [role, setRole] = useState("student");
   const [name, setName] = useState("");
   const [course, setCourse] = useState("");
@@ -34,14 +40,11 @@ const Register = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // For password validation and strength
   const [passwordError, setPasswordError] = useState("");
   const [passwordStrength, setPasswordStrength] = useState({ label: "", color: "" });
 
   const evaluatePasswordStrength = (pwd) => {
-    // Basic rules: length and mix of chars
     let score = 0;
-
     if (pwd.length >= 8) score++;
     if (/[A-Z]/.test(pwd)) score++;
     if (/[0-9]/.test(pwd)) score++;
@@ -54,13 +57,13 @@ const Register = () => {
     }
 
     if (score <= 1) {
-      setPasswordStrength({ label: "Weak", color: "#d32f2f" }); // red
+      setPasswordStrength({ label: "Weak", color: "#d32f2f" });
       setPasswordError("Password is too weak");
     } else if (score === 2 || score === 3) {
-      setPasswordStrength({ label: "Medium", color: "#ed6c02" }); // orange
+      setPasswordStrength({ label: "Medium", color: "#ed6c02" });
       setPasswordError("");
     } else if (score === 4) {
-      setPasswordStrength({ label: "Strong", color: "#2e7d32" }); // green
+      setPasswordStrength({ label: "Strong", color: "#2e7d32" });
       setPasswordError("");
     }
   };
@@ -91,8 +94,12 @@ const Register = () => {
       return;
     }
 
-    setLoading(true);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
 
+    setLoading(true);
     const payload = { email, password, role };
 
     if (role === "student") {
@@ -147,7 +154,7 @@ const Register = () => {
           <TextField
             fullWidth
             label="Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             margin="normal"
             required
             autoComplete="new-password"
@@ -155,6 +162,15 @@ const Register = () => {
             onChange={(e) => setPassword(e.target.value)}
             error={Boolean(passwordError)}
             helperText={passwordError || "At least 8 chars, uppercase, number & symbol recommended."}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
 
           {password && (
@@ -188,6 +204,27 @@ const Register = () => {
               </Typography>
             </>
           )}
+
+          <TextField
+            fullWidth
+            label="Confirm Password"
+            type={showPassword ? "text" : "password"}
+            margin="normal"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            error={confirmPassword && password !== confirmPassword}
+            helperText={confirmPassword && password !== confirmPassword ? "Passwords do not match." : ""}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
 
           <FormControl fullWidth margin="normal">
             <InputLabel>Role</InputLabel>
