@@ -84,9 +84,13 @@ const StudentDashboard = () => {
             boxShadow: 3,
             borderRadius: 4
           }}>
-            <Avatar sx={{ width: 70, height: 70, bgcolor: "primary.main", mr: 3 }}>
-              {student?.name?.charAt(0).toUpperCase() || "S"}
-            </Avatar>
+            <Avatar
+  src={student?.profilePic}
+  sx={{ width: 70, height: 70, bgcolor: "primary.main", mr: 3 }}
+>
+  {!student?.profilePic && (student?.name?.charAt(0).toUpperCase() || "S")}
+</Avatar>
+
             <Box>
               <Typography variant="h6">{student?.name}</Typography>
               <Typography variant="body2" color="text.secondary">{user?.email}</Typography>

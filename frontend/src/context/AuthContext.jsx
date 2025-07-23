@@ -141,7 +141,7 @@ export const AuthProvider = ({ children }) => {
     return (
       <Box sx={{ padding: 2, maxWidth: 400, margin: "auto", marginTop: 8 }}>
         <Typography variant="h6" gutterBottom>
-          Loading your dashboard, please wait...
+          Loading  please wait...
         </Typography>
         <Skeleton variant="rectangular" height={100} sx={{ mb: 2 }} />
         <Skeleton variant="text" width="60%" />

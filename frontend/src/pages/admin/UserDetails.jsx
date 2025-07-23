@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import {
@@ -10,10 +10,13 @@ import {
   Divider,
   Stack,
   Chip,
+  Button,
 } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 const UserDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,6 +51,15 @@ const UserDetails = () => {
           bgcolor: "background.paper",
         }}
       >
+        {/* Back Button */}
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+          sx={{ mb: 2 }}
+        >
+          Back
+        </Button>
+
         <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
           <Avatar
             src={user.profilePic || ""}
