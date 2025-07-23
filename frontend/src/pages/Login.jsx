@@ -159,12 +159,20 @@ const Login = () => {
               </Button>
             </Box>
 
-            <Typography align="center" sx={{ mt: 2 }}>
-              Don't have an account?{" "}
-              <Link to="/register" style={{ color: "#1976d2", textDecoration: "none" }}>
-                Register
-              </Link>
-            </Typography>
+            <Box sx={{ mt: 2, textAlign: "center" }}>
+  <Typography variant="body2" sx={{ mb: 1 }}>
+    <Link to="/forgot-password" style={{ color: "#1976d2", textDecoration: "none" }}>
+      Forgot Password?
+    </Link>
+  </Typography>
+  <Typography variant="body2">
+    Don't have an account?{" "}
+    <Link to="/register" style={{ color: "#1976d2", textDecoration: "none" }}>
+      Register
+    </Link>
+  </Typography>
+</Box>
+
           </Paper>
         </Container>
       )}

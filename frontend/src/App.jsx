@@ -38,6 +38,8 @@ import StudentUsers from "./pages/admin/StudentUsers";
 import EmployeeUsers from "./pages/admin/EmployeeUsers";
 import AdminProfile from "./pages/admin/AdminProfile";
 
+import ForgotPassword from "./pages/ForgotPassword";
+
 
 const App = () => {
   return (
@@ -49,9 +51,10 @@ const App = () => {
           {/* ✅ Private Home Route */}
           <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
 
-            {/* ✅ NonPrivate Home Route */}
+            {/* ✅ public Route */}
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           
 
           {/* ✅ Student Routes */}

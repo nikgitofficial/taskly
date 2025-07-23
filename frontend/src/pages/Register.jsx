@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -15,6 +15,7 @@ import {
   useMediaQuery,
   useTheme,
   CircularProgress,
+  LinearProgress,
 } from "@mui/material";
 
 const Register = () => {
@@ -33,9 +34,63 @@ const Register = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // For password validation and strength
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordStrength, setPasswordStrength] = useState({ label: "", color: "" });
+
+  const evaluatePasswordStrength = (pwd) => {
+    // Basic rules: length and mix of chars
+    let score = 0;
+
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+    if (pwd.length === 0) {
+      setPasswordStrength({ label: "", color: "" });
+      setPasswordError("");
+      return;
+    }
+
+    if (score <= 1) {
+      setPasswordStrength({ label: "Weak", color: "#d32f2f" }); // red
+      setPasswordError("Password is too weak");
+    } else if (score === 2 || score === 3) {
+      setPasswordStrength({ label: "Medium", color: "#ed6c02" }); // orange
+      setPasswordError("");
+    } else if (score === 4) {
+      setPasswordStrength({ label: "Strong", color: "#2e7d32" }); // green
+      setPasswordError("");
+    }
+  };
+
+  useEffect(() => {
+    evaluatePasswordStrength(password);
+  }, [password]);
+
+  const getPasswordProgressValue = (label) => {
+    switch (label) {
+      case "Weak":
+        return 33;
+      case "Medium":
+        return 66;
+      case "Strong":
+        return 100;
+      default:
+        return 0;
+    }
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (passwordError) {
+      setError("Please fix password errors before submitting.");
+      return;
+    }
+
     setLoading(true);
 
     const payload = { email, password, role };
@@ -88,6 +143,7 @@ const Register = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+
           <TextField
             fullWidth
             label="Password"
@@ -97,7 +153,41 @@ const Register = () => {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            error={Boolean(passwordError)}
+            helperText={passwordError || "At least 8 chars, uppercase, number & symbol recommended."}
           />
+
+          {password && (
+            <>
+              <Box sx={{ width: "100%", mt: 1 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={getPasswordProgressValue(passwordStrength.label)}
+                  sx={{
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: "#e0e0e0",
+                    "& .MuiLinearProgress-bar": {
+                      backgroundColor: passwordStrength.color || "#1976d2",
+                      transition: "width 0.5s ease-in-out",
+                    },
+                  }}
+                />
+              </Box>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: passwordStrength.color,
+                  fontWeight: "bold",
+                  mt: 0.5,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                }}
+              >
+                {passwordStrength.label} Password
+              </Typography>
+            </>
+          )}
 
           <FormControl fullWidth margin="normal">
             <InputLabel>Role</InputLabel>
@@ -109,17 +199,59 @@ const Register = () => {
 
           {role === "student" && (
             <>
-              <TextField fullWidth label="Full Name" margin="normal" required value={name} onChange={(e) => setName(e.target.value)} />
-              <TextField fullWidth label="Course" margin="normal" required value={course} onChange={(e) => setCourse(e.target.value)} />
-              <TextField fullWidth label="Year Level" margin="normal" required value={yearLevel} onChange={(e) => setYearLevel(e.target.value)} />
+              <TextField
+                fullWidth
+                label="Full Name"
+                margin="normal"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Course"
+                margin="normal"
+                required
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Year Level"
+                margin="normal"
+                required
+                value={yearLevel}
+                onChange={(e) => setYearLevel(e.target.value)}
+              />
             </>
           )}
 
           {role === "employee" && (
             <>
-              <TextField fullWidth label="Full Name" margin="normal" required value={name} onChange={(e) => setName(e.target.value)} />
-              <TextField fullWidth label="Department" margin="normal" required value={department} onChange={(e) => setDepartment(e.target.value)} />
-              <TextField fullWidth label="Position" margin="normal" required value={position} onChange={(e) => setPosition(e.target.value)} />
+              <TextField
+                fullWidth
+                label="Full Name"
+                margin="normal"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Department"
+                margin="normal"
+                required
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Position"
+                margin="normal"
+                required
+                value={position}
+                onChange={(e) => setPosition(e.target.value)}
+              />
             </>
           )}
 
