@@ -9,7 +9,7 @@ import Admin from "../../models/Admin.js";
 
 // Token generators
 const generateAccessToken = (user) =>
-  jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "15m" });
+  jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "1m" });
 
 const generateRefreshToken = (user) =>
   jwt.sign(user, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });

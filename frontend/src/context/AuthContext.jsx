@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import { CircularProgress, Skeleton, Typography, Box } from "@mui/material";
-
+import { subscribe } from "../utils/eventEmitter";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -97,45 +97,50 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const verifyAndFetch = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+  const verifyAndFetch = async () => {
+    const token = localStorage.getItem("token");
 
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        // Try to get user info with the current token
-        const userRes = await axios.get("/auth/me");
-        setUser(userRes.data);
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-        if (userRes.data.role === "student") {
-          await refreshStudent();
-        } else if (userRes.data.role === "employee") {
-          await refreshEmployee();
-        } else if (userRes.data.role === "admin") {
-          await refreshAdmin();
-        } else {
-          setStudent(null);
-          setEmployee(null);
-          setAdmin(null);
-        }
-      } catch (err) {
-        console.error("❌ Auth error:", err);
-        setUser(null);
+    try {
+      const userRes = await axios.get("/auth/me");
+      setUser(userRes.data);
+
+      if (userRes.data.role === "student") {
+        await refreshStudent();
+      } else if (userRes.data.role === "employee") {
+        await refreshEmployee();
+      } else if (userRes.data.role === "admin") {
+        await refreshAdmin();
+      } else {
         setStudent(null);
         setEmployee(null);
         setAdmin(null);
-        localStorage.removeItem("token");
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error("❌ Auth error:", err);
+      setUser(null);
+      setStudent(null);
+      setEmployee(null);
+      setAdmin(null);
+      localStorage.removeItem("token");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    verifyAndFetch();
-  }, [refreshStudent, refreshEmployee, refreshAdmin]);
+  verifyAndFetch(); // ✅ call once on mount
+
+  const unsubscribe = subscribe("tokenRefreshed", verifyAndFetch); // ✅ subscribe once
+
+  return () => unsubscribe(); // ✅ cleanup on unmount
+}, [refreshStudent, refreshEmployee, refreshAdmin]);
+
 
   if (loading) {
     return (

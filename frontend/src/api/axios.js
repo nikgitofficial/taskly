@@ -1,5 +1,6 @@
 // src/api/axios.js
 import axios from "axios";
+import { emit } from "../utils/eventEmitter";
 
 const instance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
@@ -31,6 +32,7 @@ instance.interceptors.response.use(
           `${import.meta.env.VITE_API_URL}/auth/refresh`,
           { withCredentials: true }
         );
+        
 
         const newToken = res.data.token;
         localStorage.setItem("token", newToken);
@@ -38,6 +40,7 @@ instance.interceptors.response.use(
         // Set new token on the request and Axios
         instance.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        emit("tokenRefreshed");
 
         // Retry the original request
         return instance(originalRequest);
