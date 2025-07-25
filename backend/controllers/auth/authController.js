@@ -9,10 +9,10 @@ import Admin from "../../models/Admin.js";
 
 // Token generators
 const generateAccessToken = (user) =>
-  jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "1m" });
+  jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "30d" });
 
 const generateRefreshToken = (user) =>
-  jwt.sign(user, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+  jwt.sign(user, process.env.JWT_REFRESH_SECRET, { expiresIn: "30d" });
 
 // ✅ REGISTER
 export const register = async (req, res) => {
