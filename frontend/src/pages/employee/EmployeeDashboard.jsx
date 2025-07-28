@@ -106,9 +106,7 @@ const EmployeeDashboard = () => {
             👋 Welcome Back, {employee?.name || user?.name || "Employee"}
           </Typography>
 
-         
-
-          {/* Profile Card with transparent background */}
+          {/* Profile Card */}
           <Card sx={{
             mb: 3,
             p: isTiny ? 1 : 2,
@@ -168,6 +166,32 @@ const EmployeeDashboard = () => {
               </Grid>
             ))}
 
+            {/* ✅ Pending Tasks Card */}
+            <Grid item xs={12}>
+              <Card
+                sx={{
+                  p: isTiny ? 1 : 2,
+                  background: "linear-gradient(135deg, #ff8a65, #ff7043)",
+                  color: "#fff",
+                  borderRadius: 2,
+                  boxShadow: 3,
+                  display: "flex",
+                  alignItems: "center",
+                  transition: "transform 0.3s",
+                  "&:hover": { transform: "scale(1.02)" },
+                }}
+              >
+                <ListAltIcon fontSize="large" sx={{ color: "#fff" }} />
+                <Box ml={isTiny ? 1 : 2}>
+                  <Typography fontWeight="bold">Pending Tasks</Typography>
+                  <Typography variant={isTiny ? "h6" : "h5"}>
+                    {entries.filter((e) => e.status === "Pending").length}
+                  </Typography>
+                </Box>
+              </Card>
+            </Grid>
+
+            {/* Upcoming Due Card */}
             <Grid item xs={12}>
               <Card sx={{
                 p: isTiny ? 1 : 2,
@@ -185,6 +209,7 @@ const EmployeeDashboard = () => {
               </Card>
             </Grid>
 
+            {/* Next Due Card */}
             <Grid item xs={12}>
               <Card sx={{
                 p: isTiny ? 1 : 2,
@@ -210,6 +235,7 @@ const EmployeeDashboard = () => {
             </Grid>
           </Grid>
 
+          {/* Manage Tasks Button */}
           <Box textAlign="center" mt={isTiny ? 2 : 4}>
             <Button
               component={RouterLink}
